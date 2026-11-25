@@ -1,0 +1,34 @@
+[
+  {
+    "id": 24,
+    "name": "Personalized quote with a specific licensing question",
+    "email": "From: Jordan Lee <jordan.lee@northstar.example>\nSubject: Reel partnership\n\nHi Maya,\n\nNorthstar offers USD 1,200 for one reel. Please see https://briefs.dealroom.example/northstar-summer-launch for the rights package.\n\nBest,\nJordan",
+    "expected": {"action": "counteroffer", "negotiation_move": "open_quote", "sender_evidence": "mailbox", "greeting": "Hi Jordan,", "within_word_budget": true, "question_count": 1, "reply_includes": ["USD 2,600.00", "30 days of exclusivity", "45-day paid social license"]}
+  },
+  {
+    "id": 25,
+    "name": "Shared inbox corroborated by signature",
+    "email": "From: Jordan Lee <partnerships@northstar.example>\nSubject: Campaign budget\n\nHi Maya,\n\nNorthstar offers $2,400 for one reel.\n\nThank you,\nJordan Lee",
+    "expected": {"action": "clarification", "negotiation_move": "ask_clarification", "sender_evidence": "signature", "greeting": "Hi Jordan,", "question_count": 1, "reply_includes": ["Which currency is the budget in?"]}
+  },
+  {
+    "id": 26,
+    "name": "Contradictory signatures get a neutral greeting",
+    "email": "From: Jordan Lee <jordan@northstar.example>\nSubject: Campaign budget\n\nHi Maya,\n\nNorthstar offers USD 2,400 for one reel.\n\nThanks,\nMorgan",
+    "expected": {"action": "acceptance", "sender_evidence": "ambiguous", "greeting": "Hi,", "within_word_budget": true, "reply_includes": ["USD 2,400.00", "subject to confirming"]}
+  },
+  {
+    "id": 27,
+    "name": "Keep a delivered quote when the scope stays the same",
+    "email": "Northstar offers USD 2,800 for one reel. We need 30 days of paid social ads. Paid usage is outside that budget.",
+    "followup": "Can you work with USD 2,300 instead? Everything else stays the same.",
+    "operation": "followup",
+    "expected": {"action": "counteroffer", "negotiation_move": "hold_quote", "total": 280000, "within_word_budget": true, "question_count": 1, "reply_includes": ["remains USD 2,800.00", "30-day paid social license"], "deliveries": 1}
+  },
+  {
+    "id": 28,
+    "name": "Keep the higher production budget when licensing is separate",
+    "email": "Northstar offers USD 2,800 for one reel. We need 30 days of paid social ads. Paid usage is outside that budget.",
+    "expected": {"action": "counteroffer", "negotiation_move": "open_quote", "total": 280000, "within_word_budget": true, "question_count": 1, "reply_includes": ["USD 2,800.00 works for one reel", "30-day paid social license"], "deliveries": 0}
+  }
+]

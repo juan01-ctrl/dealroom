@@ -1,0 +1,22 @@
+[
+  {
+    "id": 21,
+    "name": "Linked campaign brief grounds the offer",
+    "email": "From: Jordan Lee <jordan@northstar.example>\nSubject: Summer Launch partnership\n\nHi Maya,\n\nNorthstar offers USD 1,200 for one reel. The exclusivity and paid advertising details are in https://briefs.dealroom.example/northstar-summer-launch.\n\nBest,\nJordan",
+    "expected": {"action": "counteroffer", "total": 260000, "question": "separate paid usage budget", "document_ids": ["northstar-summer-launch"], "retrieved_sections": ["northstar-summer-launch:exclusivity", "northstar-summer-launch:paid-usage"], "denied_links": 0},
+    "extraction": {"amount": 120000, "exclusive_days": 30, "usage_days": 45}
+  },
+  {
+    "id": 22,
+    "name": "Unregistered links cannot resolve offer terms",
+    "email": "Hi Maya,\n\nNorthstar offers USD 2,400 for one reel. Please see http://127.0.0.1/private-brief for the terms.\n\nThanks, Jordan",
+    "expected": {"action": "clarification", "question": "a shareable campaign brief", "document_ids": [], "retrieved_sections": [], "denied_links": 1, "deliveries": 0}
+  },
+  {
+    "id": 23,
+    "name": "Explicit email overrides linked brief",
+    "email": "From: Jordan Lee <jordan@northstar.example>\nSubject: Updated terms\n\nNorthstar offers USD 1,200 for one reel. There is no exclusivity. Our paid social details are in https://briefs.dealroom.example/northstar-summer-launch.\n\nThanks, Jordan",
+    "expected": {"action": "counteroffer", "total": 200000, "surcharge": 0, "document_ids": ["northstar-summer-launch"], "retrieved_sections": ["northstar-summer-launch:exclusivity", "northstar-summer-launch:paid-usage"], "denied_links": 0},
+    "extraction": {"exclusive": false, "exclusive_days": null, "usage_days": 45}
+  }
+]

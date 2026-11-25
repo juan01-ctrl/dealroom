@@ -1,0 +1,102 @@
+name: Verify sandbox
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      APP_ENV: local
+      DATABASE_URL: postgresql://sandbox:sandbox@localhost:5432/negotiation
+      MODEL_MODE: scripted
+      TEST_DATABASE_URL: postgresql://sandbox:sandbox@localhost:5432/negotiation
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: sandbox
+          POSTGRES_PASSWORD: sandbox
+          POSTGRES_DB: negotiation
+        ports: ["5432:5432"]
+        options: --health-cmd "pg_isready -U sandbox -d negotiation" --health-interval 3s --health-timeout 5s --health-retries 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.10.12"
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: uv sync --locked --python 3.12
+        working-directory: backend
+      - run: |
+          uv run --locked ruff check .
+          uv run --locked ruff format --check .
+        working-directory: backend
+      - run: uv run --locked pytest -q
+        working-directory: backend
+      - run: |
+          uv run --locked python -m app.migrate
+          nohup uv run --locked uvicorn app.api:app --port 8000 > /tmp/sandbox-api.log 2>&1 &
+          for lane in negotiation evaluation; do
+            nohup uv run --locked python -m app.worker --lane "$lane" > "/tmp/sandbox-$lane.log" 2>&1 &
+          done
+          curl --retry 20 --retry-connrefused --retry-delay 1 -fsS http://127.0.0.1:8000/ready
+        working-directory: backend
+      - run: |
+          npm ci
+          npm run build
+          npm exec -- tsc --noEmit
+          npx playwright install --with-deps chromium
+          nohup npm run start > /tmp/sandbox-ui.log 2>&1 &
+          curl --retry 20 --retry-connrefused --retry-delay 1 -fsS http://localhost:3000/ > /dev/null
+          npm test
+        working-directory: frontend
+      - name: Print service logs
+        if: failure()
+        run: |
+          for log in /tmp/sandbox-*.log; do
+            if [ -f "$log" ]; then tail -n 80 "$log"; fi
+          done
+
+  advisories:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.10.12"
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - name: Audit locked Python runtime dependencies
+        run: |
+          uv export --locked --no-dev --no-emit-project --format requirements-txt \
+            --output-file "$RUNNER_TEMP/dealroom-requirements.txt" > /dev/null
+          uv tool run --python 3.12 --from pip-audit==2.10.0 pip-audit \
+            --requirement "$RUNNER_TEMP/dealroom-requirements.txt" --strict --disable-pip --require-hashes
+        working-directory: backend
+      - name: Audit locked npm dependencies
+        run: npm audit --audit-level=high
+        working-directory: frontend
+        if: ${{ !cancelled() }}
+
+  container-and-restore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Exercise container startup, schema upgrade, worker recovery and restore
+        run: bash scripts/release-smoke.sh

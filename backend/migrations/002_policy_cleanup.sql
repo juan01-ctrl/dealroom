@@ -1,0 +1,1 @@
+ALTER TABLE drafts ALTER CONSTRAINT drafts_tenant_id_policy_version_fkey DEFERRABLE INITIALLY DEFERRED;

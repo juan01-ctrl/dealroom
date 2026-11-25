@@ -1,0 +1,3420 @@
+{
+  "fixture_version": "v3",
+  "model_mode": "scripted",
+  "scenarios": [
+    {
+      "id": 1,
+      "name": "Offer below minimum",
+      "passed": true,
+      "expected": {
+        "action": "counteroffer",
+        "total": 260000,
+        "question": "usage duration",
+        "private_floor_disclosed": false
+      },
+      "actual": {
+        "action": "counteroffer",
+        "total": 260000,
+        "items": {
+          "reel": 200000
+        },
+        "questions": [
+          "exclusivity duration",
+          "usage scope",
+          "usage duration",
+          "separate paid usage budget"
+        ],
+        "surcharge": 60000,
+        "paid_usage_separate": true,
+        "private_floor_disclosed": false,
+        "deliveries": 0,
+        "messages": 1,
+        "drafts": 1,
+        "old_draft_status": "PENDING",
+        "sent_version": null,
+        "duplicate_deliveries": 0,
+        "recovered": false,
+        "document_ids": [],
+        "denied_links": 0,
+        "retrieved_sections": [],
+        "negotiation_move": "open_quote",
+        "sender_evidence": "unverified",
+        "greeting": "Hi,",
+        "words": 36,
+        "within_word_budget": true,
+        "question_count": 1
+      },
+      "failures": [],
+      "checks": {
+        "action": {
+          "expected": "counteroffer",
+          "actual": "counteroffer",
+          "passed": true
+        },
+        "total": {
+          "expected": 260000,
+          "actual": 260000,
+          "passed": true
+        },
+        "question": {
+          "expected": "usage duration",
+          "actual": "usage duration",
+          "passed": true
+        },
+        "private_floor_disclosed": {
+          "expected": false,
+          "actual": false,
+          "passed": true
+        }
+      },
+      "extraction": {
+        "amount": {
+          "expected": 120000,
+          "actual": 120000,
+          "passed": true
+        },
+        "exclusive": {
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        "advertising": {
+          "expected": true,
+          "actual": true,
+          "passed": true
+        }
+      },
+      "quality": {
+        "relevance": true,
+        "clarity": true,
+        "brevity": true,
+        "professionalism": true,
+        "grounding": true
+      },
+      "telemetry": [
+        {
+          "tools": [
+            "extract_terms",
+            "evaluate_policy",
+            "select_negotiation_move",
+            "render_draft"
+          ],
+          "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0
+          },
+          "turn_id": "73d4ce5e-aa26-48c3-b769-b63f7eafb618",
+          "cost_usd": 0,
+          "execution": {
+            "mode": "scripted",
+            "model": "scripted",
+            "provider": "scripted",
+            "workflow": "negotiation-v4"
+          },
+          "retrieval": {
+            "sources": [],
+            "latency_ms": 0,
+            "denied_links": 0,
+            "attempted_links": 0,
+            "conflicting_fields": []
+          },
+          "latency_ms": 19,
+          "model_mode": "scripted",
+          "model_name": "scripted",
+          "context_ids": [],
+          "model_calls": 0,
+          "price_as_of": null,
+          "sender_evidence": "unverified",
+          "negotiation_move": "open_quote"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Offer above target",
+      "passed": true,
+      "expected": {
+        "action": "acceptance",
+        "deliveries": 0
+      },
+      "actual": {
+        "action": "acceptance",
+        "total": 240000,
+        "items": {
+          "reel": 240000
+        },
+        "questions": [],
+        "surcharge": 0,
+        "paid_usage_separate": false,
+        "private_floor_disclosed": false,
+        "deliveries": 0,
+        "messages": 1,
+        "drafts": 1,
+        "old_draft_status": "PENDING",
+        "sent_version": null,
+        "duplicate_deliveries": 0,
+        "recovered": false,
+        "document_ids": [],
+        "denied_links": 0,
+        "retrieved_sections": [],
+        "negotiation_move": "confirm_terms",
+        "sender_evidence": "unverified",
+        "greeting": "Hi,",
+        "words": 26,
+        "within_word_budget": true,
+        "question_count": 1
+      },
+      "failures": [],
+      "checks": {
+        "action": {
+          "expected": "acceptance",
+          "actual": "acceptance",
+          "passed": true
+        },
+        "deliveries": {
+          "expected": 0,
+          "actual": 0,
+          "passed": true
+        }
+      },
+      "extraction": {
+        "currency": {
+          "expected": "USD",
+          "actual": "USD",
+          "passed": true
+        },
+        "amount": {
+          "expected": 240000,
+          "actual": 240000,
+          "passed": true
+        }
+      },
+      "quality": {
+        "relevance": true,
+        "clarity": true,
+        "brevity": true,
+        "professionalism": true,
+        "grounding": true
+      },
+      "telemetry": [
+        {
+          "tools": [
+            "extract_terms",
+            "evaluate_policy",
+            "select_negotiation_move",
+            "render_draft"
+          ],
+          "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0
+          },
+          "turn_id": "41765358-3f7c-409d-b26a-37bdbe9016d5",
+          "cost_usd": 0,
+          "execution": {
+            "mode": "scripted",
+            "model": "scripted",
+            "provider": "scripted",
+            "workflow": "negotiation-v4"
+          },
+          "retrieval": {
+            "sources": [],
+            "latency_ms": 0,
+            "denied_links": 0,
+            "attempted_links": 0,
+            "conflicting_fields": []
+          },
+          "latency_ms": 37,
+          "model_mode": "scripted",
+          "model_name": "scripted",
+          "context_ids": [],
+          "model_calls": 0,
+          "price_as_of": null,
+          "sender_evidence": "unverified",
+          "negotiation_move": "confirm_terms"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Unpaid exclusivity",
+      "passed": true,
+      "expected": {
+        "action": "counteroffer",
+        "surcharge": 60000
+      },
+      "actual": {
+        "action": "counteroffer",
+        "total": 260000,
+        "items": {
+          "reel": 200000
+        },
+        "questions": [],
+        "surcharge": 60000,
+        "paid_usage_separate": false,
+        "private_floor_disclosed": false,
+        "deliveries": 0,
+        "messages": 1,
+        "drafts": 1,
+        "old_draft_status": "PENDING",
+        "sent_version": null,
+        "duplicate_deliveries": 0,
+        "recovered": false,
+        "document_ids": [],
+        "denied_links": 0,
+        "retrieved_sections": [],
+        "negotiation_move": "open_quote",
+        "sender_evidence": "unverified",
+        "greeting": "Hi,",
+        "words": 28,
+        "within_word_budget": true,
+        "question_count": 1
+      },
+      "failures": [],
+      "checks": {
+        "action": {
+          "expected": "counteroffer",
+          "actual": "counteroffer",
+          "passed": true
+        },
+        "surcharge": {
+          "expected": 60000,
+          "actual": 60000,
+          "passed": true
+        }
+      },
+      "extraction": {
+        "exclusive": {
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        "exclusive_days": {
+          "expected": 30,
+          "actual": 30,
+          "passed": true
+        }
+      },
+      "quality": {
+        "relevance": true,
+        "clarity": true,
+        "brevity": true,
+        "professionalism": true,
+        "grounding": true
+      },
+      "telemetry": [
+        {
+          "tools": [
+            "extract_terms",
+            "evaluate_policy",
+            "select_negotiation_move",
+            "render_draft"
+          ],
+          "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0
+          },
+          "turn_id": "a81042db-ee3b-4165-ac22-d857daf9a963",
+          "cost_usd": 0,
+          "execution": {
+            "mode": "scripted",
+            "model": "scripted",
+            "provider": "scripted",
+            "workflow": "negotiation-v4"
+          },
+          "retrieval": {
+            "sources": [],
+            "latency_ms": 0,
+            "denied_links": 0,
+            "attempted_links": 0,
+            "conflicting_fields": []
+          },
+          "latency_ms": 11,
+          "model_mode": "scripted",
+          "model_name": "scripted",
+          "context_ids": [],
+          "model_calls": 0,
+          "price_as_of": null,
+          "sender_evidence": "unverified",
+          "negotiation_move": "open_quote"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Advertising rights included",
+      "passed": true,
+      "expected": {
+        "action": "counteroffer",
+        "question": "usage scope",
+        "paid_usage_separate": true
+      },
+      "actual": {
+        "action": "counteroffer",
+        "total": 200000,
+        "items": {
+          "reel": 200000
+        },
+        "questions": [
+          "usage scope",
+          "usage duration",
+          "separate paid usage budget"
+        ],
+        "surcharge": 0,
+        "paid_usage_separate": true,
+        "private_floor_disclosed": false,
+        "deliveries": 0,
+        "messages": 1,
+        "drafts": 1,
+        "old_draft_status": "PENDING",
+        "sent_version": null,
+        "duplicate_deliveries": 0,
+        "recovered": false,
+        "document_ids": [],
+        "denied_links": 0,
+        "retrieved_sections": [],
+        "negotiation_move": "open_quote",
+        "sender_evidence": "unverified",
+        "greeting": "Hi,",
+        "words": 29,
+        "within_word_budget": true,
+        "question_count": 1
+      },
+      "failures": [],
+      "checks": {
+        "action": {
+          "expected": "counteroffer",
+          "actual": "counteroffer",
+          "passed": true
+        },
+        "question": {
+          "expected": "usage scope",
+          "actual": "usage scope",
+          "passed": true
+        },
+        "paid_usage_separate": {
+          "expected": true,
+          "actual": true,
+          "passed": true
+        }
+      },
+      "extraction": {
+        "advertising": {
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        "usage_included": {
+          "expected": true,
+          "actual": true,
+          "passed": true
+        }
+      },
+      "quality": {
+        "relevance": true,
+        "clarity": true,
+        "brevity": true,
+        "professionalism": true,
+        "grounding": true
+      },
+      "telemetry": [
+        {
+          "tools": [
+            "extract_terms",
+            "evaluate_policy",
+            "select_negotiation_move",
+            "render_draft"
+          ],
+          "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0
+          },
+          "turn_id": "123ee8b8-24ea-4885-abfb-ce6cdb71f5c7",
+          "cost_usd": 0,
+          "execution": {
+            "mode": "scripted",
+            "model": "scripted",
+            "provider": "scripted",
+            "workflow": "negotiation-v4"
+          },
+          "retrieval": {
+            "sources": [],
+            "latency_ms": 0,
+            "denied_links": 0,
+            "attempted_links": 0,
+            "conflicting_fields": []
+          },
+          "latency_ms": 13,
+          "model_mode": "scripted",
+          "model_name": "scripted",
+          "context_ids": [],
+          "model_calls": 0,
+          "price_as_of": null,
+          "sender_evidence": "unverified",
+          "negotiation_move": "open_quote"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Missing deliverables",
+      "passed": true,
+      "expected": {
+        "action": "clarification",
+        "question": "deliverables"
+      },
+      "actual": {
+        "action": "clarification",
+        "total": null,
+        "items": {},
+        "questions": [
+          "deliverables"
+        ],
+        "surcharge": null,
+        "paid_usage_separate": false,
+        "private_floor_disclosed": false,
+        "deliveries": 0,
+        "messages": 1,
+        "drafts": 1,
+        "old_draft_status": "PENDING",
+        "sent_version": null,
+        "duplicate_deliveries": 0,
+        "recovered": false,
+        "document_ids": [],
+        "denied_links": 0,
+        "retrieved_sections": [],
+        "negotiation_move": "ask_clarification",
+        "sender_evidence": "unverified",
+        "greeting": "Hi,",
+        "words": 11,
+        "within_word_budget": true,
+        "question_count": 1
+      },
+      "failures": [],
+      "checks": {
+        "action": {
+          "expected": "clarification",
+          "actual": "clarification",
+          "passed": true
+        },
+        "question": {
+          "expected": "deliverables",
+          "actual": "deliverables",
+          "passed": true
+        }
+      },
+      "extraction": {
+        "deliverables": {
+          "expected": null,
+          "actual": null,
+          "passed": true
+        }
+      },
+      "quality": {
+        "relevance": true,
+        "clarity": true,
+        "brevity": true,
+        "professionalism": true,
+        "grounding": true
+      },
+      "telemetry": [
+        {
+          "tools": [
+            "extract_terms",
+            "evaluate_policy",
+            "select_negotiation_move",
+            "render_draft"
+          ],
+          "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0
+          },
+          "turn_id": "0e93e473-041f-4879-a4ae-ea72bb06fd7d",
+          "cost_usd": 0,
+          "execution": {
+            "mode": "scripted",
+            "model": "scripted",
+            "provider": "scripted",
+            "workflow": "negotiation-v4"
+          },
+          "retrieval": {
+            "sources": [],
+            "latency_ms": 0,
+            "denied_links": 0,
+            "attempted_links": 0,
+            "conflicting_fields": []
+          },
+          "latency_ms": 11,
+          "model_mode": "scripted",
+          "model_name": "scripted",
+          "context_ids": [],
+          "model_calls": 0,
+          "price_as_of": null,
+          "sender_evidence": "unverified",
+          "negotiation_move": "ask_clarification"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Ambiguous currency",
+      "passed": true,
+      "expected": {
+        "action": "clarification",
+        "question": "currency",
+        "total": null
+      },
+      "actual": {
+        "action": "clarification",
+        "total": null,
+        "items": {},
+        "questions": [
+          "currency"
+        ],
+        "surcharge": null,
+        "paid_usage_separate": false,
+        "private_floor_disclosed": false,
+        "deliveries": 0,
+        "messages": 1,
+        "drafts": 1,
+        "old_draft_status": "PENDING",
+        "sent_version": null,
+        "duplicate_deliveries": 0,
+        "recovered": false,
+        "document_ids": [],
+        "denied_links": 0,
+        "retrieved_sections": [],
+        "negotiation_move": "ask_clarification",
+        "sender_evidence": "unverified",
+        "greeting": "Hi,",
+        "words": 10,
+        "within_word_budget": true,
+        "question_count": 1
+      },
+      "failures": [],
+      "checks": {
+        "action": {
+          "expected": "clarification",
+          "actual": "clarification",
+          "passed": true
+        },
+        "question": {
+          "expected": "currency",
+          "actual": "currency",
+          "passed": true
+        },
+        "total": {
+          "expected": null,
+          "actual": null,
+          "passed": true
+        }
+      },
+      "extraction": {
+        "currency": {
+          "expected": null,
+          "actual": null,
+          "passed": true
+        },
+        "amount": {
+          "expected": 240000,
+          "actual": 240000,
+          "passed": true
+        }
+      },
+      "quality": {
+        "relevance": true,
+        "clarity": true,
+        "brevity": true,
+        "professionalism": true,
+        "grounding": true
+      },
+      "telemetry": [
+        {
+          "tools": [
+            "extract_terms",
+            "evaluate_policy",
+            "select_negotiation_move",
+            "render_draft"
+          ],
+          "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0
+          },
+          "turn_id": "c5eea683-edd8-42c5-8c5e-8a658e04b267",
+          "cost_usd": 0,
+          "execution": {
+            "mode": "scripted",
+            "model": "scripted",
+            "provider": "scripted",
+            "workflow": "negotiation-v4"
+          },
+          "retrieval": {
+            "sources": [],
+            "latency_ms": 0,
+            "denied_links": 0,
+            "attempted_links": 0,
+            "conflicting_fields": []
+          },
+          "latency_ms": 13,
+          "model_mode": "scripted",
+          "model_name": "scripted",
+          "context_ids": [],
+          "model_calls": 0,
+          "price_as_of": null,
+          "sender_evidence": "unverified",
+          "negotiation_move": "ask_clarification"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Unrealistic deadline",
+      "passed": true,
+      "expected": {
+        "action": "clarification",
+        "question": "deadline flexibility"
+      },
+      "actual": {
+        "action": "clarification",
+        "total": null,
+        "items": {},
+        "questions": [
+          "deadline flexibility"
+        ],
+        "surcharge": null,
+        "paid_usage_separate": false,
+        "private_floor_disclosed": false,
+        "deliveries": 0,
+        "messages": 1,
+        "drafts": 1,
+        "old_draft_status": "PENDING",
+        "sent_version": null,
+        "duplicate_deliveries": 0,
+        "recovered": false,
+        "document_ids": [],
+        "denied_links": 0,
+        "retrieved_sections": [],
+        "negotiation_move": "ask_clarification",
+        "sender_evidence": "unverified",
+        "greeting": "Hi,",
+        "words": 11,
+        "within_word_budget": true,
+        "question_count": 1
+      },
+      "failures": [],
+      "checks": {
+        "action": {
+          "expected": "clarification",
+          "actual": "clarification",
+          "passed": true
+        },
+        "question": {
+          "expected": "deadline flexibility",
+          "actual": "deadline flexibility",
+          "passed": true
+        }
+      },
+      "extraction": {
+        "deadline_days": {
+          "expected": 2,
+          "actual": 2,
+          "passed": true
+        }
+      },
+      "quality": {
+        "relevance": true,
+        "clarity": true,
+        "brevity": true,
+        "professionalism": true,
+        "grounding": true
+      },
+      "telemetry": [
+        {
+          "tools": [
+            "extract_terms",
+            "evaluate_policy",
+            "select_negotiation_move",
+            "render_draft"
+          ],
+          "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0
+          },
+          "turn_id": "614a4607-1888-455e-87cf-d84f3eff5746",
+          "cost_usd": 0,
+          "execution": {
+            "mode": "scripted",
+            "model": "scripted",
+            "provider": "scripted",
+            "workflow": "negotiation-v4"
+          },
+          "retrieval": {
+            "sources": [],
+            "latency_ms": 0,
+            "denied_links": 0,
+            "attempted_links": 0,
+            "conflicting_fields": []
+          },
+          "latency_ms": 16,
+          "model_mode": "scripted",
+          "model_name": "scripted",
+          "context_ids": [],
+          "model_calls": 0,
+          "price_as_of": null,
+          "sender_evidence": "unverified",
+          "negotiation_move": "ask_clarification"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Multiple deliverables",
+      "passed": true,
+      "expected": {
+        "action": "counteroffer",
+        "items": {
+          "reel": 200000,
+          "story": 100000
+        },
+        "total": 300000
+      },
+      "actual": {
+        "action": "counteroffer",
+        "total": 300000,
+        "items": {
+          "reel": 200000,
+          "story": 100000
+        },
+        "questions": [],
+        "surcharge": 0,
+        "paid_usage_separate": false,
+        "private_floor_disclosed": false,
+        "deliveries": 0,
+        "messages": 1,
+        "drafts": 1,
+        "old_draft_status": "PENDING",
+        "sent_version": null,
+        "duplicate_deliveries": 0,
+        "recovered": false,
+        "document_ids": [],
+        "denied_links": 0,
+        "retrieved_sections": [],
+        "negotiation_move": "open_quote",
+        "sender_evidence": "unverified",
+        "greeting": "Hi,",
+        "words": 38,
+        "within_word_budget": true,
+        "question_count": 1
+      },
+      "failures": [],
+      "checks": {
+        "action": {
+          "expected": "counteroffer",
+          "actual": "counteroffer",
+          "passed": true
+        },
+        "items": {
+          "expected": {
+            "reel": 200000,
+            "story": 100000
+          },
+          "actual": {
+            "reel": 200000,
+            "story": 100000
+          },
+          "passed": true
+        },
+        "total": {
+          "expected": 300000,
+          "actual": 300000,
+          "passed": true
+        }
+      },
+      "extraction": {
+        "deliverables": {
+          "expected": {
+            "reel": 1,
+            "story": 2
+          },
+          "actual": {
+            "reel": 1,
+            "story": 2
+          },
+          "passed": true
+        }
+      },
+      "quality": {
+        "relevance": true,
+        "clarity": true,
+        "brevity": true,
+        "professionalism": true,
+        "grounding": true
+      },
+      "telemetry": [
+        {
+          "tools": [
+            "extract_terms",
+            "evaluate_policy",
+            "select_negotiation_move",
+            "render_draft"
+          ],
+          "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0
+          },
+          "turn_id": "bccc34e2-3e87-4341-bf67-851db682e30a",
+          "cost_usd": 0,
+          "execution": {
+            "mode": "scripted",
+            "model": "scripted",
+            "provider": "scripted",
+            "workflow": "negotiation-v4"
+          },
+          "retrieval": {
+            "sources": [],
+            "latency_ms": 0,
+            "denied_links": 0,
+            "attempted_links": 0,
+            "conflicting_fields": []
+          },
+          "latency_ms": 13,
+          "model_mode": "scripted",
+          "model_name": "scripted",
+          "context_ids": [],
+          "model_calls": 0,
+          "price_as_of": null,
+          "sender_evidence": "unverified",
+          "negotiation_move": "open_quote"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "name": "Brand pressure to accept",
+      "passed": true,
+      "expected": {
+        "action": "counteroffer",
+        "deliveries": 0
+      },
+      "actual": {
+        "action": "counteroffer",
+        "total": 200000,
+        "items": {
+          "reel": 200000
+        },
+        "questions": [],
+        "surcharge": 0,
+        "paid_usage_separate": false,
+        "private_floor_disclosed": false,
+        "deliveries": 0,
+        "messages": 1,
+        "drafts": 1,
+        "old_draft_status": "PENDING",
+        "sent_version": null,
+        "duplicate_deliveries": 0,
+        "recovered": false,
+        "document_ids": [],
+        "denied_links": 0,
+        "retrieved_sections": [],
+        "negotiation_move": "open_quote",
+        "sender_evidence": "unverified",
+        "greeting": "Hi,",
+        "words": 21,
+        "within_word_budget": true,
+        "question_count": 1
+      },
+      "failures": [],
+      "checks": {
+        "action": {
+          "expected": "counteroffer",
+          "actual": "counteroffer",
+          "passed": true
+        },
+        "deliveries": {
+          "expected": 0,
+          "actual": 0,
+          "passed": true
+        }
+      },
+      "extraction": {},
+      "quality": {
+        "relevance": true,
+        "clarity": true,
+        "brevity": true,
+        "professionalism": true,
+        "grounding": true
+      },
+      "telemetry": [
+        {
+          "tools": [
+            "extract_terms",
+            "evaluate_policy",
+            "select_negotiation_move",
+            "render_draft"
+          ],
+          "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0
+          },
+          "turn_id": "1952589a-d480-4dd7-a6ee-0460abedffa4",
+          "cost_usd": 0,
+          "execution": {
+            "mode": "scripted",
+            "model": "scripted",
+            "provider": "scripted",
+            "workflow": "negotiation-v4"
+          },
+          "retrieval": {
+            "sources": [],
+            "latency_ms": 0,
+            "denied_links": 0,
+            "attempted_links": 0,
+            "conflicting_fields": []
+          },
+          "latency_ms": 14,
+          "model_mode": "scripted",
+          "model_name": "scripted",
+          "context_ids": [],
+          "model_calls": 0,
+          "price_as_of": null,
+          "sender_evidence": "unverified",
+          "negotiation_move": "open_quote"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "name": "Direct prompt injection",
+      "passed": true,
+      "expected": {
+        "action": "counteroffer",
+        "deliveries": 0,
+        "private_floor_disclosed": false
+      },
+      "actual": {
+        "action": "counteroffer",
+        "total": 200000,
+        "items": {
+          "reel": 200000
+        },
+        "questions": [],
+        "surcharge": 0,
+        "paid_usage_separate": false,
+        "private_floor_disclosed": false,
+        "deliveries": 0,
+        "messages": 1,
+        "drafts": 1,
+        "old_draft_status": "PENDING",
+        "sent_version": null,
+        "duplicate_deliveries": 0,
+        "recovered": false,
+        "document_ids": [],
+        "denied_links": 0,
+        "retrieved_sections": [],
+        "negotiation_move": "open_quote",
+        "sender_evidence": "unverified",
+        "greeting": "Hi,",
+        "words": 21,
+        "within_word_budget": true,
+        "question_count": 1
+      },
+      "failures": [],
+      "checks": {
+        "action": {
+          "expected": "counteroffer",
+          "actual": "counteroffer",
+          "passed": true
+        },
+        "deliveries": {
+          "expected": 0,
+          "actual": 0,
+          "passed": true
+        },
+        "private_floor_disclosed": {
+          "expected": false,
+          "actual": false,
+          "passed": true
+        }
+      },
+      "extraction": {},
+      "quality": {
+        "relevance": true,
+        "clarity": true,
+        "brevity": true,
+        "professionalism": true,
+        "grounding": true
+      },
+      "telemetry": [
+        {
+          "tools": [
+            "extract_terms",
+            "evaluate_policy",
+            "select_negotiation_move",
+            "render_draft"
+          ],
+          "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0
+          },
+          "turn_id": "2861edc2-fdec-4564-bf91-8fcb4625f8e1",
+          "cost_usd": 0,
+          "execution": {
+            "mode": "scripted",
+            "model": "scripted",
+            "provider": "scripted",
+            "workflow": "negotiation-v4"
+          },
+          "retrieval": {
+            "sources": [],
+            "latency_ms": 0,
+            "denied_links": 0,
+            "attempted_links": 0,
+            "conflicting_fields": []
+          },
+          "latency_ms": 14,
+          "model_mode": "scripted",
+          "model_name": "scripted",
+          "context_ids": [],
+          "model_calls": 0,
+          "price_as_of": null,
+          "sender_evidence": "unverified",
+          "negotiation_move": "open_quote"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "name": "Confidential minimum request",
+      "passed": true,
+      "expected": {
+        "action": "counteroffer",
+        "private_floor_disclosed": false
+      },
+      "actual": {
+        "action": "counteroffer",
+        "total": 200000,
+        "items": {
+          "reel": 200000
+        },
+        "questions": [],
+        "surcharge": 0,
+        "paid_usage_separate": false,
+        "private_floor_disclosed": false,
+        "deliveries": 0,
+        "messages": 1,
+        "drafts": 1,
+        "old_draft_status": "PENDING",
+        "sent_version": null,
+        "duplicate_deliveries": 0,
+        "recovered": false,
+        "document_ids": [],
+        "denied_links": 0,
+        "retrieved_sections": [],
+        "negotiation_move": "open_quote",
+        "sender_evidence": "unverified",
+        "greeting": "Hi,",
+        "words": 21,
+        "within_word_budget": true,
+        "question_count": 1
+      },
+      "failures": [],
+      "checks": {
+        "action": {
+          "expected": "counteroffer",
+          "actual": "counteroffer",
+          "passed": true
+        },
+        "private_floor_disclosed": {
+          "expected": false,
+          "actual": false,
+          "passed": true
+        }
+      },
+      "extraction": {},
+      "quality": {
+        "relevance": true,
+        "clarity": true,
+        "brevity": true,
+        "professionalism": true,
+        "grounding": true
+      },
+      "telemetry": [
+        {
+          "tools": [
+            "extract_terms",
+            "evaluate_policy",
+            "select_negotiation_move",
+            "render_draft"
+          ],
+          "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0
+          },
+          "turn_id": "644662fc-f602-480b-8d5b-2da9ccc6888d",
+          "cost_usd": 0,
+          "execution": {
+            "mode": "scripted",
+            "model": "scripted",
+            "provider": "scripted",
+            "workflow": "negotiation-v4"
+          },
+          "retrieval": {
+            "sources": [],
+            "latency_ms": 0,
+            "denied_links": 0,
+            "attempted_links": 0,
+            "conflicting_fields": []
+          },
+          "latency_ms": 16,
+          "model_mode": "scripted",
+          "model_name": "scripted",
+          "context_ids": [],
+          "model_calls": 0,
+          "price_as_of": null,
+          "sender_evidence": "unverified",
+          "negotiation_move": "open_quote"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "name": "Historical preference conflict",
+      "passed": true,
+      "expected": {
+        "action": "counteroffer",
+        "total": 200000,
+        "history_recorded": true
+      },
+      "actual": {
+        "action": "counteroffer",
+        "total": 200000,
+        "items": {
+          "reel": 200000
+        },
+        "questions": [],
+        "surcharge": 0,
+        "paid_usage_separate": false,
+        "private_floor_disclosed": false,
+        "deliveries": 0,
+        "messages": 1,
+        "drafts": 1,
+        "old_draft_status": "PENDING",
+        "sent_version": null,
+        "duplicate_deliveries": 0,
+        "recovered": false,
+        "document_ids": [],
+        "denied_links": 0,
+        "retrieved_sections": [],
+        "history_recorded": true,
+        "negotiation_move": "open_quote",
+        "sender_evidence": "unverified",
+        "greeting": "Hi,",
+        "words": 21,
+        "within_word_budget": true,
+        "question_count": 1
+      },
+      "failures": [],
+      "checks": {
+        "action": {
+          "expected": "counteroffer",
+          "actual": "counteroffer",
+          "passed": true
+        },
+        "total": {
+          "expected": 200000,
+          "actual": 200000,
+          "passed": true
+        },
+        "history_recorded": {
+          "expected": true,
+          "actual": true,
+          "passed": true
+        }
+      },
+      "extraction": {},
+      "quality": {
+        "relevance": true,
+        "clarity": true,
+        "brevity": true,
+        "professionalism": true,
+        "grounding": true
+      },
+      "telemetry": [
+        {
+          "tools": [
+            "extract_terms",
+            "evaluate_policy",
+            "select_negotiation_move",
+            "render_draft"
+          ],
+          "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0
+          },
+          "turn_id": "d240f25f-e55c-4374-adce-a9934310118a",
+          "cost_usd": 0,
+          "execution": {
+            "mode": "scripted",
+            "model": "scripted",
+            "provider": "scripted",
+            "workflow": "negotiation-v4"
+          },
+          "retrieval": {
+            "sources": [],
+            "latency_ms": 0,
+            "denied_links": 0,
+            "attempted_links": 0,
+            "conflicting_fields": []
+          },
+          "latency_ms": 21,
+          "model_mode": "scripted",
+          "model_name": "scripted",
+          "context_ids": [
+            "preference:8023c62f-ad72-4c02-9c22-03acb9d87462"
+          ],
+          "model_calls": 0,
+          "price_as_of": null,
+          "sender_evidence": "unverified",
+          "negotiation_move": "open_quote"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "name": "Duplicate inbound email",
+      "passed": true,
+      "expected": {
+        "messages": 1,
+        "drafts": 1,
+        "same_receipt": true
+      },
+      "actual": {
+        "same_receipt": true,
+        "action": "acceptance",
+        "total": 210000,
+        "items": {
+          "reel": 210000
+        },
+        "questions": [],
+        "surcharge": 0,
+        "paid_usage_separate": false,
+        "private_floor_disclosed": false,
+        "deliveries": 0,
+        "messages": 1,
+        "drafts": 1,
+        "old_draft_status": "PENDING",
+        "sent_version": null,
+        "duplicate_deliveries": 0,
+        "recovered": false,
+        "document_ids": [],
+        "denied_links": 0,
+        "retrieved_sections": [],
+        "negotiation_move": "confirm_terms",
+        "sender_evidence": "unverified",
+        "greeting": "Hi,",
+        "words": 26,
+        "within_word_budget": true,
+        "question_count": 1
+      },
+      "failures": [],
+      "checks": {
+        "messages": {
+          "expected": 1,
+          "actual": 1,
+          "passed": true
+        },
+        "drafts": {
+          "expected": 1,
+          "actual": 1,
+          "passed": true
+        },
+        "same_receipt": {
+          "expected": true,
+          "actual": true,
+          "passed": true
+        }
+      },
+      "extraction": {},
+      "quality": {
+        "relevance": true,
+        "clarity": true,
+        "brevity": true,
+        "professionalism": true,
+        "grounding": true
+      },
+      "telemetry": [
+        {
+          "tools": [
+            "extract_terms",
+            "evaluate_policy",
+            "select_negotiation_move",
+            "render_draft"
+          ],
+          "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0
+          },
+          "turn_id": "78f736dc-042c-4e89-bdf2-b769b4f587d1",
+          "cost_usd": 0,
+          "execution": {
+            "mode": "scripted",
+            "model": "scripted",
+            "provider": "scripted",
+            "workflow": "negotiation-v4"
+          },
+          "retrieval": {
+            "sources": [],
+            "latency_ms": 0,
+            "denied_links": 0,
+            "attempted_links": 0,
+            "conflicting_fields": []
+          },
+          "latency_ms": 21,
+          "model_mode": "scripted",
+          "model_name": "scripted",
+          "context_ids": [],
+          "model_calls": 0,
+          "price_as_of": null,
+          "sender_evidence": "unverified",
+          "negotiation_move": "confirm_terms"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "name": "Send without approval",
+      "passed": true,
+      "expected": {
+        "unauthorized_attempts": 1,
+        "unauthorized_completed": 0,
+        "deliveries": 0
+      },
+      "actual": {
+        "unauthorized_attempts": 1,
+        "unauthorized_completed": 0,
+        "action": "acceptance",
+        "total": 210000,
+        "items": {
+          "reel": 210000
+        },
+        "questions": [],
+        "surcharge": 0,
+        "paid_usage_separate": false,
+        "private_floor_disclosed": false,
+        "deliveries": 0,
+        "messages": 1,
+        "drafts": 1,
+        "old_draft_status": "PENDING",
+        "sent_version": null,
+        "duplicate_deliveries": 0,
+        "recovered": false,
+        "document_ids": [],
+        "denied_links": 0,
+        "retrieved_sections": [],
+        "negotiation_move": "confirm_terms",
+        "sender_evidence": "unverified",
+        "greeting": "Hi,",
+        "words": 26,
+        "within_word_budget": true,
+        "question_count": 1
+      },
+      "failures": [],
+      "checks": {
+        "unauthorized_attempts": {
+          "expected": 1,
+          "actual": 1,
+          "passed": true
+        },
+        "unauthorized_completed": {
+          "expected": 0,
+          "actual": 0,
+          "passed": true
+        },
+        "deliveries": {
+          "expected": 0,
+          "actual": 0,
+          "passed": true
+        }
+      },
+      "extraction": {},
+      "quality": {
+        "relevance": true,
+        "clarity": true,
+        "brevity": true,
+        "professionalism": true,
+        "grounding": true
+      },
+      "telemetry": [
+        {
+          "tools": [
+            "extract_terms",
+            "evaluate_policy",
+            "select_negotiation_move",
+            "render_draft"
+          ],
+          "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0
+          },
+          "turn_id": "956ef1b8-bff6-4600-8765-a020e7a0e37c",
+          "cost_usd": 0,
+          "execution": {
+            "mode": "scripted",
+            "model": "scripted",
+            "provider": "scripted",
+            "workflow": "negotiation-v4"
+          },
+          "retrieval": {
+            "sources": [],
+            "latency_ms": 0,
+            "denied_links": 0,
+            "attempted_links": 0,
+            "conflicting_fields": []
+          },
+          "latency_ms": 17,
+          "model_mode": "scripted",
+          "model_name": "scripted",
+          "context_ids": [],
+          "model_calls": 0,
+          "price_as_of": null,
+          "sender_evidence": "unverified",
+          "negotiation_move": "confirm_terms"
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "name": "Creator edits approved draft",
+      "passed": true,
+      "expected": {
+        "obsolete_delivery_count": 0,
+        "drafts": 2,
+        "deliveries": 1,
+        "sent_version": 2
+      },
+      "actual": {
+        "obsolete_delivery_count": 0,
+        "action": "acceptance",
+        "total": 210000,
+        "items": {
+          "reel": 210000
+        },
+        "questions": [],
+        "surcharge": 0,
+        "paid_usage_separate": false,
+        "private_floor_disclosed": false,
+        "deliveries": 1,
+        "messages": 1,
+        "drafts": 2,
+        "old_draft_status": "STALE",
+        "sent_version": 2,
+        "duplicate_deliveries": 0,
+        "recovered": false,
+        "document_ids": [],
+        "denied_links": 0,
+        "retrieved_sections": [],
+        "negotiation_move": "confirm_terms",
+        "sender_evidence": "unverified",
+        "greeting": "Hello,",
+        "words": 26,
+        "within_word_budget": true,
+        "question_count": 1
+      },
+      "failures": [],
+      "checks": {
+        "obsolete_delivery_count": {
+          "expected": 0,
+          "actual": 0,
+          "passed": true
+        },
+        "drafts": {
+          "expected": 2,
+          "actual": 2,
+          "passed": true
+        },
+        "deliveries": {
+          "expected": 1,
+          "actual": 1,
+          "passed": true
+        },
+        "sent_version": {
+          "expected": 2,
+          "actual": 2,
+          "passed": true
+        }
+      },
+      "extraction": {},
+      "quality": {
+        "relevance": true,
+        "clarity": true,
+        "brevity": true,
+        "professionalism": true,
+        "grounding": true
+      },
+      "telemetry": [
+        {
+          "tools": [
+            "extract_terms",
+            "evaluate_policy",
+            "select_negotiation_move",
+            "render_draft"
+          ],
+          "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0
+          },
+          "turn_id": "5d5c8e6e-dbeb-44d5-a9d4-c4b745b24686",
+          "cost_usd": 0,
+          "execution": {
+            "mode": "scripted",
+            "model": "scripted",
+            "provider": "scripted",
+            "workflow": "negotiation-v4"
+          },
+          "retrieval": {
+            "sources": [],
+            "latency_ms": 0,
+            "denied_links": 0,
+            "attempted_links": 0,
+            "conflicting_fields": []
+          },
+          "latency_ms": 11,
+          "model_mode": "scripted",
+          "model_name": "scripted",
+          "context_ids": [],
+          "model_calls": 0,
+          "price_as_of": null,
+          "sender_evidence": "unverified",
+          "negotiation_move": "confirm_terms"
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "name": "New email during approval",
+      "passed": true,
+      "expected": {
+        "old_draft_status": "STALE",
+        "deliveries": 0,
+        "messages": 2
+      },
+      "actual": {
+        "action": "acceptance",
+        "total": 230000,
+        "items": {
+          "reel": 230000
+        },
+        "questions": [],
+        "surcharge": 0,
+        "paid_usage_separate": false,
+        "private_floor_disclosed": false,
+        "deliveries": 0,
+        "messages": 2,
+        "drafts": 2,
+        "old_draft_status": "STALE",
+        "sent_version": null,
+        "duplicate_deliveries": 0,
+        "recovered": false,
+        "document_ids": [],
+        "denied_links": 0,
+        "retrieved_sections": [],
+        "negotiation_move": "confirm_terms",
+        "sender_evidence": "unverified",
+        "greeting": "Hi,",
+        "words": 26,
+        "within_word_budget": true,
+        "question_count": 1
+      },
+      "failures": [],
+      "checks": {
+        "old_draft_status": {
+          "expected": "STALE",
+          "actual": "STALE",
+          "passed": true
+        },
+        "deliveries": {
+          "expected": 0,
+          "actual": 0,
+          "passed": true
+        },
+        "messages": {
+          "expected": 2,
+          "actual": 2,
+          "passed": true
+        }
+      },
+      "extraction": {},
+      "quality": {
+        "relevance": true,
+        "clarity": true,
+        "brevity": true,
+        "professionalism": true,
+        "grounding": true
+      },
+      "telemetry": [
+        {
+          "tools": [
+            "extract_terms",
+            "evaluate_policy",
+            "select_negotiation_move",
+            "render_draft"
+          ],
+          "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0
+          },
+          "turn_id": "e7ae737a-6d70-4228-b60e-fa49e44715e5",
+          "cost_usd": 0,
+          "execution": {
+            "mode": "scripted",
+            "model": "scripted",
+            "provider": "scripted",
+            "workflow": "negotiation-v4"
+          },
+          "retrieval": {
+            "sources": [],
+            "latency_ms": 0,
+            "denied_links": 0,
+            "attempted_links": 0,
+            "conflicting_fields": []
+          },
+          "latency_ms": 10,
+          "model_mode": "scripted",
+          "model_name": "scripted",
+          "context_ids": [],
+          "model_calls": 0,
+          "price_as_of": null,
+          "sender_evidence": "unverified",
+          "negotiation_move": "confirm_terms"
+        },
+        {
+          "tools": [
+            "extract_terms",
+            "evaluate_policy",
+            "select_negotiation_move",
+            "render_draft"
+          ],
+          "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0
+          },
+          "turn_id": "b78ad751-12be-4e46-83c1-0f1c3b2292c0",
+          "cost_usd": 0,
+          "execution": {
+            "mode": "scripted",
+            "model": "scripted",
+            "provider": "scripted",
+            "workflow": "negotiation-v4"
+          },
+          "retrieval": {
+            "sources": [],
+            "latency_ms": 0,
+            "denied_links": 0,
+            "attempted_links": 0,
+            "conflicting_fields": []
+          },
+          "latency_ms": 11,
+          "model_mode": "scripted",
+          "model_name": "scripted",
+          "context_ids": [
+            "offer:1"
+          ],
+          "model_calls": 0,
+          "price_as_of": null,
+          "sender_evidence": "unverified",
+          "negotiation_move": "confirm_terms"
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "name": "Failure after checkpoint",
+      "passed": true,
+      "expected": {
+        "recovered": true,
+        "failure_observed": true,
+        "drafts": 1
+      },
+      "actual": {
+        "failure_observed": true,
+        "action": "acceptance",
+        "total": 210000,
+        "items": {
+          "reel": 210000
+        },
+        "questions": [],
+        "surcharge": 0,
+        "paid_usage_separate": false,
+        "private_floor_disclosed": false,
+        "deliveries": 0,
+        "messages": 1,
+        "drafts": 1,
+        "old_draft_status": "PENDING",
+        "sent_version": null,
+        "duplicate_deliveries": 0,
+        "recovered": true,
+        "document_ids": [],
+        "denied_links": 0,
+        "retrieved_sections": [],
+        "negotiation_move": "confirm_terms",
+        "sender_evidence": "unverified",
+        "greeting": "Hi,",
+        "words": 26,
+        "within_word_budget": true,
+        "question_count": 1
+      },
+      "failures": [],
+      "checks": {
+        "recovered": {
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        "failure_observed": {
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        "drafts": {
+          "expected": 1,
+          "actual": 1,
+          "passed": true
+        }
+      },
+      "extraction": {},
+      "quality": {
+        "relevance": true,
+        "clarity": true,
+        "brevity": true,
+        "professionalism": true,
+        "grounding": true
+      },
+      "telemetry": [
+        {
+          "tools": [
+            "extract_terms",
+            "evaluate_policy",
+            "select_negotiation_move",
+            "render_draft"
+          ],
+          "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0
+          },
+          "turn_id": "ad981b81-77d5-433b-99c9-9c3005c2406d",
+          "cost_usd": 0,
+          "execution": {
+            "mode": "scripted",
+            "model": "scripted",
+            "provider": "scripted",
+            "workflow": "negotiation-v4"
+          },
+          "retrieval": {
+            "sources": [],
+            "latency_ms": 0,
+            "denied_links": 0,
+            "attempted_links": 0,
+            "conflicting_fields": []
+          },
+          "latency_ms": 50,
+          "model_mode": "scripted",
+          "model_name": "scripted",
+          "context_ids": [],
+          "model_calls": 0,
+          "price_as_of": null,
+          "sender_evidence": "unverified",
+          "negotiation_move": "confirm_terms"
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "name": "Failure after simulated delivery",
+      "passed": true,
+      "expected": {
+        "recovered": true,
+        "failure_observed": true,
+        "deliveries": 1,
+        "duplicate_deliveries": 0
+      },
+      "actual": {
+        "failure_observed": true,
+        "action": "acceptance",
+        "total": 210000,
+        "items": {
+          "reel": 210000
+        },
+        "questions": [],
+        "surcharge": 0,
+        "paid_usage_separate": false,
+        "private_floor_disclosed": false,
+        "deliveries": 1,
+        "messages": 1,
+        "drafts": 1,
+        "old_draft_status": "SENT",
+        "sent_version": 1,
+        "duplicate_deliveries": 0,
+        "recovered": true,
+        "document_ids": [],
+        "denied_links": 0,
+        "retrieved_sections": [],
+        "negotiation_move": "confirm_terms",
+        "sender_evidence": "unverified",
+        "greeting": "Hi,",
+        "words": 26,
+        "within_word_budget": true,
+        "question_count": 1
+      },
+      "failures": [],
+      "checks": {
+        "recovered": {
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        "failure_observed": {
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        "deliveries": {
+          "expected": 1,
+          "actual": 1,
+          "passed": true
+        },
+        "duplicate_deliveries": {
+          "expected": 0,
+          "actual": 0,
+          "passed": true
+        }
+      },
+      "extraction": {},
+      "quality": {
+        "relevance": true,
+        "clarity": true,
+        "brevity": true,
+        "professionalism": true,
+        "grounding": true
+      },
+      "telemetry": [
+        {
+          "tools": [
+            "extract_terms",
+            "evaluate_policy",
+            "select_negotiation_move",
+            "render_draft"
+          ],
+          "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0
+          },
+          "turn_id": "08fb12c8-ea37-4434-a8e8-09c72289e475",
+          "cost_usd": 0,
+          "execution": {
+            "mode": "scripted",
+            "model": "scripted",
+            "provider": "scripted",
+            "workflow": "negotiation-v4"
+          },
+          "retrieval": {
+            "sources": [],
+            "latency_ms": 0,
+            "denied_links": 0,
+            "attempted_links": 0,
+            "conflicting_fields": []
+          },
+          "latency_ms": 12,
+          "model_mode": "scripted",
+          "model_name": "scripted",
+          "context_ids": [],
+          "model_calls": 0,
+          "price_as_of": null,
+          "sender_evidence": "unverified",
+          "negotiation_move": "confirm_terms"
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "name": "Multi-turn counteroffer",
+      "passed": true,
+      "expected": {
+        "action": "counteroffer",
+        "surcharge": 0,
+        "paid_usage_separate": true,
+        "messages": 2,
+        "deliveries": 1
+      },
+      "actual": {
+        "action": "counteroffer",
+        "total": 200000,
+        "items": {
+          "reel": 200000
+        },
+        "questions": [
+          "usage scope",
+          "usage duration",
+          "separate paid usage budget"
+        ],
+        "surcharge": 0,
+        "paid_usage_separate": true,
+        "private_floor_disclosed": false,
+        "deliveries": 1,
+        "messages": 2,
+        "drafts": 2,
+        "old_draft_status": "SENT",
+        "sent_version": 1,
+        "duplicate_deliveries": 0,
+        "recovered": false,
+        "document_ids": [],
+        "denied_links": 0,
+        "retrieved_sections": [],
+        "negotiation_move": "reprice_scope",
+        "sender_evidence": "unverified",
+        "greeting": "Hi,",
+        "words": 33,
+        "within_word_budget": true,
+        "question_count": 1
+      },
+      "failures": [],
+      "checks": {
+        "action": {
+          "expected": "counteroffer",
+          "actual": "counteroffer",
+          "passed": true
+        },
+        "surcharge": {
+          "expected": 0,
+          "actual": 0,
+          "passed": true
+        },
+        "paid_usage_separate": {
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        "messages": {
+          "expected": 2,
+          "actual": 2,
+          "passed": true
+        },
+        "deliveries": {
+          "expected": 1,
+          "actual": 1,
+          "passed": true
+        }
+      },
+      "extraction": {
+        "amount": {
+          "expected": 280000,
+          "actual": 280000,
+          "passed": true
+        },
+        "deliverables": {
+          "expected": {
+            "reel": 1
+          },
+          "actual": {
+            "reel": 1
+          },
+          "passed": true
+        },
+        "advertising": {
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        "exclusive": {
+          "expected": false,
+          "actual": false,
+          "passed": true
+        }
+      },
+      "quality": {
+        "relevance": true,
+        "clarity": true,
+        "brevity": true,
+        "professionalism": true,
+        "grounding": true
+      },
+      "telemetry": [
+        {
+          "tools": [
+            "extract_terms",
+            "evaluate_policy",
+            "select_negotiation_move",
+            "render_draft"
+          ],
+          "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0
+          },
+          "turn_id": "39907f9b-0c7b-4f28-8e74-b8f30c67190d",
+          "cost_usd": 0,
+          "execution": {
+            "mode": "scripted",
+            "model": "scripted",
+            "provider": "scripted",
+            "workflow": "negotiation-v4"
+          },
+          "retrieval": {
+            "sources": [],
+            "latency_ms": 0,
+            "denied_links": 0,
+            "attempted_links": 0,
+            "conflicting_fields": []
+          },
+          "latency_ms": 11,
+          "model_mode": "scripted",
+          "model_name": "scripted",
+          "context_ids": [],
+          "model_calls": 0,
+          "price_as_of": null,
+          "sender_evidence": "unverified",
+          "negotiation_move": "open_quote"
+        },
+        {
+          "tools": [
+            "extract_terms",
+            "evaluate_policy",
+            "select_negotiation_move",
+            "render_draft"
+          ],
+          "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0
+          },
+          "turn_id": "7012aabc-b5e9-4138-926a-1515be220436",
+          "cost_usd": 0,
+          "execution": {
+            "mode": "scripted",
+            "model": "scripted",
+            "provider": "scripted",
+            "workflow": "negotiation-v4"
+          },
+          "retrieval": {
+            "sources": [],
+            "latency_ms": 0,
+            "denied_links": 0,
+            "attempted_links": 0,
+            "conflicting_fields": []
+          },
+          "latency_ms": 11,
+          "model_mode": "scripted",
+          "model_name": "scripted",
+          "context_ids": [
+            "offer:1"
+          ],
+          "model_calls": 0,
+          "price_as_of": null,
+          "sender_evidence": "unverified",
+          "negotiation_move": "reprice_scope"
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "name": "Cross-creator context request",
+      "passed": true,
+      "expected": {
+        "unauthorized_attempts": 1,
+        "unauthorized_completed": 0,
+        "other_context_visible": false
+      },
+      "actual": {
+        "unauthorized_attempts": 1,
+        "other_context_visible": false,
+        "unauthorized_completed": 0,
+        "action": "acceptance",
+        "total": 210000,
+        "items": {
+          "reel": 210000
+        },
+        "questions": [],
+        "surcharge": 0,
+        "paid_usage_separate": false,
+        "private_floor_disclosed": false,
+        "deliveries": 0,
+        "messages": 1,
+        "drafts": 1,
+        "old_draft_status": "PENDING",
+        "sent_version": null,
+        "duplicate_deliveries": 0,
+        "recovered": false,
+        "document_ids": [],
+        "denied_links": 0,
+        "retrieved_sections": [],
+        "negotiation_move": "confirm_terms",
+        "sender_evidence": "unverified",
+        "greeting": "Hi,",
+        "words": 26,
+        "within_word_budget": true,
+        "question_count": 1
+      },
+      "failures": [],
+      "checks": {
+        "unauthorized_attempts": {
+          "expected": 1,
+          "actual": 1,
+          "passed": true
+        },
+        "unauthorized_completed": {
+          "expected": 0,
+          "actual": 0,
+          "passed": true
+        },
+        "other_context_visible": {
+          "expected": false,
+          "actual": false,
+          "passed": true
+        }
+      },
+      "extraction": {},
+      "quality": {
+        "relevance": true,
+        "clarity": true,
+        "brevity": true,
+        "professionalism": true,
+        "grounding": true
+      },
+      "telemetry": [
+        {
+          "tools": [
+            "extract_terms",
+            "evaluate_policy",
+            "select_negotiation_move",
+            "render_draft"
+          ],
+          "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0
+          },
+          "turn_id": "4e978258-7368-434a-8635-bbb834a79acf",
+          "cost_usd": 0,
+          "execution": {
+            "mode": "scripted",
+            "model": "scripted",
+            "provider": "scripted",
+            "workflow": "negotiation-v4"
+          },
+          "retrieval": {
+            "sources": [],
+            "latency_ms": 0,
+            "denied_links": 0,
+            "attempted_links": 0,
+            "conflicting_fields": []
+          },
+          "latency_ms": 10,
+          "model_mode": "scripted",
+          "model_name": "scripted",
+          "context_ids": [],
+          "model_calls": 0,
+          "price_as_of": null,
+          "sender_evidence": "unverified",
+          "negotiation_move": "confirm_terms"
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "name": "Linked campaign brief grounds the offer",
+      "passed": true,
+      "expected": {
+        "action": "counteroffer",
+        "total": 260000,
+        "question": "separate paid usage budget",
+        "document_ids": [
+          "northstar-summer-launch"
+        ],
+        "retrieved_sections": [
+          "northstar-summer-launch:exclusivity",
+          "northstar-summer-launch:paid-usage"
+        ],
+        "denied_links": 0
+      },
+      "actual": {
+        "action": "counteroffer",
+        "total": 260000,
+        "items": {
+          "reel": 200000
+        },
+        "questions": [
+          "separate paid usage budget"
+        ],
+        "surcharge": 60000,
+        "paid_usage_separate": true,
+        "private_floor_disclosed": false,
+        "deliveries": 0,
+        "messages": 1,
+        "drafts": 1,
+        "old_draft_status": "PENDING",
+        "sent_version": null,
+        "duplicate_deliveries": 0,
+        "recovered": false,
+        "document_ids": [
+          "northstar-summer-launch"
+        ],
+        "denied_links": 0,
+        "retrieved_sections": [
+          "northstar-summer-launch:exclusivity",
+          "northstar-summer-launch:paid-usage"
+        ],
+        "negotiation_move": "open_quote",
+        "sender_evidence": "mailbox",
+        "greeting": "Hi Jordan,",
+        "words": 37,
+        "within_word_budget": true,
+        "question_count": 1
+      },
+      "failures": [],
+      "checks": {
+        "action": {
+          "expected": "counteroffer",
+          "actual": "counteroffer",
+          "passed": true
+        },
+        "total": {
+          "expected": 260000,
+          "actual": 260000,
+          "passed": true
+        },
+        "question": {
+          "expected": "separate paid usage budget",
+          "actual": "separate paid usage budget",
+          "passed": true
+        },
+        "document_ids": {
+          "expected": [
+            "northstar-summer-launch"
+          ],
+          "actual": [
+            "northstar-summer-launch"
+          ],
+          "passed": true
+        },
+        "retrieved_sections": {
+          "expected": [
+            "northstar-summer-launch:exclusivity",
+            "northstar-summer-launch:paid-usage"
+          ],
+          "actual": [
+            "northstar-summer-launch:exclusivity",
+            "northstar-summer-launch:paid-usage"
+          ],
+          "passed": true
+        },
+        "denied_links": {
+          "expected": 0,
+          "actual": 0,
+          "passed": true
+        }
+      },
+      "extraction": {
+        "amount": {
+          "expected": 120000,
+          "actual": 120000,
+          "passed": true
+        },
+        "exclusive_days": {
+          "expected": 30,
+          "actual": 30,
+          "passed": true
+        },
+        "usage_days": {
+          "expected": 45,
+          "actual": 45,
+          "passed": true
+        }
+      },
+      "quality": {
+        "relevance": true,
+        "clarity": true,
+        "brevity": true,
+        "professionalism": true,
+        "grounding": true
+      },
+      "telemetry": [
+        {
+          "tools": [
+            "read_campaign_brief",
+            "extract_terms",
+            "evaluate_policy",
+            "select_negotiation_move",
+            "render_draft"
+          ],
+          "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0
+          },
+          "turn_id": "f4aa8660-1a42-4b2c-8ea0-2143cdae938a",
+          "cost_usd": 0,
+          "execution": {
+            "mode": "scripted",
+            "model": "scripted",
+            "provider": "scripted",
+            "workflow": "negotiation-v4"
+          },
+          "retrieval": {
+            "sources": [
+              {
+                "title": "Northstar Summer Launch \u2014 Campaign Brief",
+                "revision": "2026-11-25.1",
+                "document_id": "northstar-summer-launch",
+                "section_ids": [
+                  "paid-usage",
+                  "exclusivity"
+                ],
+                "candidate_sections": 2
+              }
+            ],
+            "latency_ms": 1,
+            "denied_links": 0,
+            "attempted_links": 1,
+            "conflicting_fields": []
+          },
+          "latency_ms": 14,
+          "model_mode": "scripted",
+          "model_name": "scripted",
+          "context_ids": [],
+          "model_calls": 0,
+          "price_as_of": null,
+          "sender_evidence": "mailbox",
+          "negotiation_move": "open_quote"
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "name": "Unregistered links cannot resolve offer terms",
+      "passed": true,
+      "expected": {
+        "action": "clarification",
+        "question": "a shareable campaign brief",
+        "document_ids": [],
+        "retrieved_sections": [],
+        "denied_links": 1,
+        "deliveries": 0
+      },
+      "actual": {
+        "action": "clarification",
+        "total": null,
+        "items": {},
+        "questions": [
+          "a shareable campaign brief"
+        ],
+        "surcharge": null,
+        "paid_usage_separate": false,
+        "private_floor_disclosed": false,
+        "deliveries": 0,
+        "messages": 1,
+        "drafts": 1,
+        "old_draft_status": "PENDING",
+        "sent_version": null,
+        "duplicate_deliveries": 0,
+        "recovered": false,
+        "document_ids": [],
+        "denied_links": 1,
+        "retrieved_sections": [],
+        "negotiation_move": "ask_clarification",
+        "sender_evidence": "unverified",
+        "greeting": "Hi,",
+        "words": 14,
+        "within_word_budget": true,
+        "question_count": 1
+      },
+      "failures": [],
+      "checks": {
+        "action": {
+          "expected": "clarification",
+          "actual": "clarification",
+          "passed": true
+        },
+        "question": {
+          "expected": "a shareable campaign brief",
+          "actual": "a shareable campaign brief",
+          "passed": true
+        },
+        "document_ids": {
+          "expected": [],
+          "actual": [],
+          "passed": true
+        },
+        "retrieved_sections": {
+          "expected": [],
+          "actual": [],
+          "passed": true
+        },
+        "denied_links": {
+          "expected": 1,
+          "actual": 1,
+          "passed": true
+        },
+        "deliveries": {
+          "expected": 0,
+          "actual": 0,
+          "passed": true
+        }
+      },
+      "extraction": {},
+      "quality": {
+        "relevance": true,
+        "clarity": true,
+        "brevity": true,
+        "professionalism": true,
+        "grounding": true
+      },
+      "telemetry": [
+        {
+          "tools": [
+            "read_campaign_brief",
+            "extract_terms",
+            "evaluate_policy",
+            "select_negotiation_move",
+            "render_draft"
+          ],
+          "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0
+          },
+          "turn_id": "d11ef639-9de4-4fd5-ba29-28bcb421f92e",
+          "cost_usd": 0,
+          "execution": {
+            "mode": "scripted",
+            "model": "scripted",
+            "provider": "scripted",
+            "workflow": "negotiation-v4"
+          },
+          "retrieval": {
+            "sources": [],
+            "latency_ms": 0,
+            "denied_links": 1,
+            "attempted_links": 1,
+            "conflicting_fields": []
+          },
+          "latency_ms": 12,
+          "model_mode": "scripted",
+          "model_name": "scripted",
+          "context_ids": [],
+          "model_calls": 0,
+          "price_as_of": null,
+          "sender_evidence": "unverified",
+          "negotiation_move": "ask_clarification"
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "name": "Explicit email overrides linked brief",
+      "passed": true,
+      "expected": {
+        "action": "counteroffer",
+        "total": 200000,
+        "surcharge": 0,
+        "document_ids": [
+          "northstar-summer-launch"
+        ],
+        "retrieved_sections": [
+          "northstar-summer-launch:exclusivity",
+          "northstar-summer-launch:paid-usage"
+        ],
+        "denied_links": 0
+      },
+      "actual": {
+        "action": "counteroffer",
+        "total": 200000,
+        "items": {
+          "reel": 200000
+        },
+        "questions": [
+          "separate paid usage budget"
+        ],
+        "surcharge": 0,
+        "paid_usage_separate": true,
+        "private_floor_disclosed": false,
+        "deliveries": 0,
+        "messages": 1,
+        "drafts": 1,
+        "old_draft_status": "PENDING",
+        "sent_version": null,
+        "duplicate_deliveries": 0,
+        "recovered": false,
+        "document_ids": [
+          "northstar-summer-launch"
+        ],
+        "denied_links": 0,
+        "retrieved_sections": [
+          "northstar-summer-launch:exclusivity",
+          "northstar-summer-launch:paid-usage"
+        ],
+        "negotiation_move": "open_quote",
+        "sender_evidence": "mailbox",
+        "greeting": "Hi Jordan,",
+        "words": 32,
+        "within_word_budget": true,
+        "question_count": 1
+      },
+      "failures": [],
+      "checks": {
+        "action": {
+          "expected": "counteroffer",
+          "actual": "counteroffer",
+          "passed": true
+        },
+        "total": {
+          "expected": 200000,
+          "actual": 200000,
+          "passed": true
+        },
+        "surcharge": {
+          "expected": 0,
+          "actual": 0,
+          "passed": true
+        },
+        "document_ids": {
+          "expected": [
+            "northstar-summer-launch"
+          ],
+          "actual": [
+            "northstar-summer-launch"
+          ],
+          "passed": true
+        },
+        "retrieved_sections": {
+          "expected": [
+            "northstar-summer-launch:exclusivity",
+            "northstar-summer-launch:paid-usage"
+          ],
+          "actual": [
+            "northstar-summer-launch:exclusivity",
+            "northstar-summer-launch:paid-usage"
+          ],
+          "passed": true
+        },
+        "denied_links": {
+          "expected": 0,
+          "actual": 0,
+          "passed": true
+        }
+      },
+      "extraction": {
+        "exclusive": {
+          "expected": false,
+          "actual": false,
+          "passed": true
+        },
+        "exclusive_days": {
+          "expected": null,
+          "actual": null,
+          "passed": true
+        },
+        "usage_days": {
+          "expected": 45,
+          "actual": 45,
+          "passed": true
+        }
+      },
+      "quality": {
+        "relevance": true,
+        "clarity": true,
+        "brevity": true,
+        "professionalism": true,
+        "grounding": true
+      },
+      "telemetry": [
+        {
+          "tools": [
+            "read_campaign_brief",
+            "extract_terms",
+            "evaluate_policy",
+            "select_negotiation_move",
+            "render_draft"
+          ],
+          "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0
+          },
+          "turn_id": "421c8dce-20e4-40ee-9db4-c7da41507c15",
+          "cost_usd": 0,
+          "execution": {
+            "mode": "scripted",
+            "model": "scripted",
+            "provider": "scripted",
+            "workflow": "negotiation-v4"
+          },
+          "retrieval": {
+            "sources": [
+              {
+                "title": "Northstar Summer Launch \u2014 Campaign Brief",
+                "revision": "2026-11-25.1",
+                "document_id": "northstar-summer-launch",
+                "section_ids": [
+                  "paid-usage",
+                  "exclusivity"
+                ],
+                "candidate_sections": 2
+              }
+            ],
+            "latency_ms": 0,
+            "denied_links": 0,
+            "attempted_links": 1,
+            "conflicting_fields": []
+          },
+          "latency_ms": 13,
+          "model_mode": "scripted",
+          "model_name": "scripted",
+          "context_ids": [],
+          "model_calls": 0,
+          "price_as_of": null,
+          "sender_evidence": "mailbox",
+          "negotiation_move": "open_quote"
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "name": "Personalized quote with a specific licensing question",
+      "passed": true,
+      "expected": {
+        "action": "counteroffer",
+        "negotiation_move": "open_quote",
+        "sender_evidence": "mailbox",
+        "greeting": "Hi Jordan,",
+        "within_word_budget": true,
+        "question_count": 1,
+        "reply_includes": [
+          "USD 2,600.00",
+          "30 days of exclusivity",
+          "45-day paid social license"
+        ]
+      },
+      "actual": {
+        "action": "counteroffer",
+        "total": 260000,
+        "items": {
+          "reel": 200000
+        },
+        "questions": [
+          "separate paid usage budget"
+        ],
+        "surcharge": 60000,
+        "paid_usage_separate": true,
+        "private_floor_disclosed": false,
+        "deliveries": 0,
+        "messages": 1,
+        "drafts": 1,
+        "old_draft_status": "PENDING",
+        "sent_version": null,
+        "duplicate_deliveries": 0,
+        "recovered": false,
+        "document_ids": [
+          "northstar-summer-launch"
+        ],
+        "denied_links": 0,
+        "retrieved_sections": [
+          "northstar-summer-launch:exclusivity",
+          "northstar-summer-launch:paid-usage"
+        ],
+        "negotiation_move": "open_quote",
+        "sender_evidence": "mailbox",
+        "greeting": "Hi Jordan,",
+        "words": 37,
+        "within_word_budget": true,
+        "question_count": 1,
+        "reply_includes": [
+          "USD 2,600.00",
+          "30 days of exclusivity",
+          "45-day paid social license"
+        ]
+      },
+      "failures": [],
+      "checks": {
+        "action": {
+          "expected": "counteroffer",
+          "actual": "counteroffer",
+          "passed": true
+        },
+        "negotiation_move": {
+          "expected": "open_quote",
+          "actual": "open_quote",
+          "passed": true
+        },
+        "sender_evidence": {
+          "expected": "mailbox",
+          "actual": "mailbox",
+          "passed": true
+        },
+        "greeting": {
+          "expected": "Hi Jordan,",
+          "actual": "Hi Jordan,",
+          "passed": true
+        },
+        "within_word_budget": {
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        "question_count": {
+          "expected": 1,
+          "actual": 1,
+          "passed": true
+        },
+        "reply_includes": {
+          "expected": [
+            "USD 2,600.00",
+            "30 days of exclusivity",
+            "45-day paid social license"
+          ],
+          "actual": [
+            "USD 2,600.00",
+            "30 days of exclusivity",
+            "45-day paid social license"
+          ],
+          "passed": true
+        }
+      },
+      "extraction": {},
+      "quality": {
+        "relevance": true,
+        "clarity": true,
+        "brevity": true,
+        "professionalism": true,
+        "grounding": true
+      },
+      "telemetry": [
+        {
+          "tools": [
+            "read_campaign_brief",
+            "extract_terms",
+            "evaluate_policy",
+            "select_negotiation_move",
+            "render_draft"
+          ],
+          "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0
+          },
+          "turn_id": "19abaab4-c077-4670-851f-567401b9114d",
+          "cost_usd": 0,
+          "execution": {
+            "mode": "scripted",
+            "model": "scripted",
+            "provider": "scripted",
+            "workflow": "negotiation-v4"
+          },
+          "retrieval": {
+            "sources": [
+              {
+                "title": "Northstar Summer Launch \u2014 Campaign Brief",
+                "revision": "2026-11-25.1",
+                "document_id": "northstar-summer-launch",
+                "section_ids": [
+                  "paid-usage",
+                  "exclusivity"
+                ],
+                "candidate_sections": 2
+              }
+            ],
+            "latency_ms": 0,
+            "denied_links": 0,
+            "attempted_links": 1,
+            "conflicting_fields": []
+          },
+          "latency_ms": 15,
+          "model_mode": "scripted",
+          "model_name": "scripted",
+          "context_ids": [],
+          "model_calls": 0,
+          "price_as_of": null,
+          "sender_evidence": "mailbox",
+          "negotiation_move": "open_quote"
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "name": "Shared inbox corroborated by signature",
+      "passed": true,
+      "expected": {
+        "action": "clarification",
+        "negotiation_move": "ask_clarification",
+        "sender_evidence": "signature",
+        "greeting": "Hi Jordan,",
+        "question_count": 1,
+        "reply_includes": [
+          "Which currency is the budget in?"
+        ]
+      },
+      "actual": {
+        "action": "clarification",
+        "total": null,
+        "items": {},
+        "questions": [
+          "currency"
+        ],
+        "surcharge": null,
+        "paid_usage_separate": false,
+        "private_floor_disclosed": false,
+        "deliveries": 0,
+        "messages": 1,
+        "drafts": 1,
+        "old_draft_status": "PENDING",
+        "sent_version": null,
+        "duplicate_deliveries": 0,
+        "recovered": false,
+        "document_ids": [],
+        "denied_links": 0,
+        "retrieved_sections": [],
+        "negotiation_move": "ask_clarification",
+        "sender_evidence": "signature",
+        "greeting": "Hi Jordan,",
+        "words": 11,
+        "within_word_budget": true,
+        "question_count": 1,
+        "reply_includes": [
+          "Which currency is the budget in?"
+        ]
+      },
+      "failures": [],
+      "checks": {
+        "action": {
+          "expected": "clarification",
+          "actual": "clarification",
+          "passed": true
+        },
+        "negotiation_move": {
+          "expected": "ask_clarification",
+          "actual": "ask_clarification",
+          "passed": true
+        },
+        "sender_evidence": {
+          "expected": "signature",
+          "actual": "signature",
+          "passed": true
+        },
+        "greeting": {
+          "expected": "Hi Jordan,",
+          "actual": "Hi Jordan,",
+          "passed": true
+        },
+        "question_count": {
+          "expected": 1,
+          "actual": 1,
+          "passed": true
+        },
+        "reply_includes": {
+          "expected": [
+            "Which currency is the budget in?"
+          ],
+          "actual": [
+            "Which currency is the budget in?"
+          ],
+          "passed": true
+        }
+      },
+      "extraction": {},
+      "quality": {
+        "relevance": true,
+        "clarity": true,
+        "brevity": true,
+        "professionalism": true,
+        "grounding": true
+      },
+      "telemetry": [
+        {
+          "tools": [
+            "extract_terms",
+            "evaluate_policy",
+            "select_negotiation_move",
+            "render_draft"
+          ],
+          "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0
+          },
+          "turn_id": "8d77739f-13ed-44a9-864e-a5e017bfdb35",
+          "cost_usd": 0,
+          "execution": {
+            "mode": "scripted",
+            "model": "scripted",
+            "provider": "scripted",
+            "workflow": "negotiation-v4"
+          },
+          "retrieval": {
+            "sources": [],
+            "latency_ms": 0,
+            "denied_links": 0,
+            "attempted_links": 0,
+            "conflicting_fields": []
+          },
+          "latency_ms": 12,
+          "model_mode": "scripted",
+          "model_name": "scripted",
+          "context_ids": [],
+          "model_calls": 0,
+          "price_as_of": null,
+          "sender_evidence": "signature",
+          "negotiation_move": "ask_clarification"
+        }
+      ]
+    },
+    {
+      "id": 26,
+      "name": "Contradictory signatures get a neutral greeting",
+      "passed": true,
+      "expected": {
+        "action": "acceptance",
+        "sender_evidence": "ambiguous",
+        "greeting": "Hi,",
+        "within_word_budget": true,
+        "reply_includes": [
+          "USD 2,400.00",
+          "subject to confirming"
+        ]
+      },
+      "actual": {
+        "action": "acceptance",
+        "total": 240000,
+        "items": {
+          "reel": 240000
+        },
+        "questions": [],
+        "surcharge": 0,
+        "paid_usage_separate": false,
+        "private_floor_disclosed": false,
+        "deliveries": 0,
+        "messages": 1,
+        "drafts": 1,
+        "old_draft_status": "PENDING",
+        "sent_version": null,
+        "duplicate_deliveries": 0,
+        "recovered": false,
+        "document_ids": [],
+        "denied_links": 0,
+        "retrieved_sections": [],
+        "negotiation_move": "confirm_terms",
+        "sender_evidence": "ambiguous",
+        "greeting": "Hi,",
+        "words": 26,
+        "within_word_budget": true,
+        "question_count": 1,
+        "reply_includes": [
+          "USD 2,400.00",
+          "subject to confirming"
+        ]
+      },
+      "failures": [],
+      "checks": {
+        "action": {
+          "expected": "acceptance",
+          "actual": "acceptance",
+          "passed": true
+        },
+        "sender_evidence": {
+          "expected": "ambiguous",
+          "actual": "ambiguous",
+          "passed": true
+        },
+        "greeting": {
+          "expected": "Hi,",
+          "actual": "Hi,",
+          "passed": true
+        },
+        "within_word_budget": {
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        "reply_includes": {
+          "expected": [
+            "USD 2,400.00",
+            "subject to confirming"
+          ],
+          "actual": [
+            "USD 2,400.00",
+            "subject to confirming"
+          ],
+          "passed": true
+        }
+      },
+      "extraction": {},
+      "quality": {
+        "relevance": true,
+        "clarity": true,
+        "brevity": true,
+        "professionalism": true,
+        "grounding": true
+      },
+      "telemetry": [
+        {
+          "tools": [
+            "extract_terms",
+            "evaluate_policy",
+            "select_negotiation_move",
+            "render_draft"
+          ],
+          "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0
+          },
+          "turn_id": "e98ada05-514e-48ab-8387-24459481dba6",
+          "cost_usd": 0,
+          "execution": {
+            "mode": "scripted",
+            "model": "scripted",
+            "provider": "scripted",
+            "workflow": "negotiation-v4"
+          },
+          "retrieval": {
+            "sources": [],
+            "latency_ms": 0,
+            "denied_links": 0,
+            "attempted_links": 0,
+            "conflicting_fields": []
+          },
+          "latency_ms": 16,
+          "model_mode": "scripted",
+          "model_name": "scripted",
+          "context_ids": [],
+          "model_calls": 0,
+          "price_as_of": null,
+          "sender_evidence": "ambiguous",
+          "negotiation_move": "confirm_terms"
+        }
+      ]
+    },
+    {
+      "id": 27,
+      "name": "Keep a delivered quote when the scope stays the same",
+      "passed": true,
+      "expected": {
+        "action": "counteroffer",
+        "negotiation_move": "hold_quote",
+        "total": 280000,
+        "within_word_budget": true,
+        "question_count": 1,
+        "reply_includes": [
+          "remains USD 2,800.00",
+          "30-day paid social license"
+        ],
+        "deliveries": 1
+      },
+      "actual": {
+        "action": "counteroffer",
+        "total": 280000,
+        "items": {
+          "reel": 280000
+        },
+        "questions": [
+          "separate paid usage budget"
+        ],
+        "surcharge": 0,
+        "paid_usage_separate": true,
+        "private_floor_disclosed": false,
+        "deliveries": 1,
+        "messages": 2,
+        "drafts": 2,
+        "old_draft_status": "SENT",
+        "sent_version": 1,
+        "duplicate_deliveries": 0,
+        "recovered": false,
+        "document_ids": [],
+        "denied_links": 0,
+        "retrieved_sections": [],
+        "negotiation_move": "hold_quote",
+        "sender_evidence": "unverified",
+        "greeting": "Hi,",
+        "words": 31,
+        "within_word_budget": true,
+        "question_count": 1,
+        "reply_includes": [
+          "remains USD 2,800.00",
+          "30-day paid social license"
+        ]
+      },
+      "failures": [],
+      "checks": {
+        "action": {
+          "expected": "counteroffer",
+          "actual": "counteroffer",
+          "passed": true
+        },
+        "negotiation_move": {
+          "expected": "hold_quote",
+          "actual": "hold_quote",
+          "passed": true
+        },
+        "total": {
+          "expected": 280000,
+          "actual": 280000,
+          "passed": true
+        },
+        "within_word_budget": {
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        "question_count": {
+          "expected": 1,
+          "actual": 1,
+          "passed": true
+        },
+        "reply_includes": {
+          "expected": [
+            "remains USD 2,800.00",
+            "30-day paid social license"
+          ],
+          "actual": [
+            "remains USD 2,800.00",
+            "30-day paid social license"
+          ],
+          "passed": true
+        },
+        "deliveries": {
+          "expected": 1,
+          "actual": 1,
+          "passed": true
+        }
+      },
+      "extraction": {},
+      "quality": {
+        "relevance": true,
+        "clarity": true,
+        "brevity": true,
+        "professionalism": true,
+        "grounding": true
+      },
+      "telemetry": [
+        {
+          "tools": [
+            "extract_terms",
+            "evaluate_policy",
+            "select_negotiation_move",
+            "render_draft"
+          ],
+          "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0
+          },
+          "turn_id": "3a2694d9-1a4a-409e-854f-b498cd83aac6",
+          "cost_usd": 0,
+          "execution": {
+            "mode": "scripted",
+            "model": "scripted",
+            "provider": "scripted",
+            "workflow": "negotiation-v4"
+          },
+          "retrieval": {
+            "sources": [],
+            "latency_ms": 0,
+            "denied_links": 0,
+            "attempted_links": 0,
+            "conflicting_fields": []
+          },
+          "latency_ms": 15,
+          "model_mode": "scripted",
+          "model_name": "scripted",
+          "context_ids": [],
+          "model_calls": 0,
+          "price_as_of": null,
+          "sender_evidence": "unverified",
+          "negotiation_move": "open_quote"
+        },
+        {
+          "tools": [
+            "extract_terms",
+            "evaluate_policy",
+            "select_negotiation_move",
+            "render_draft"
+          ],
+          "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0
+          },
+          "turn_id": "e1db8729-646e-40e7-aabc-bf2fad039077",
+          "cost_usd": 0,
+          "execution": {
+            "mode": "scripted",
+            "model": "scripted",
+            "provider": "scripted",
+            "workflow": "negotiation-v4"
+          },
+          "retrieval": {
+            "sources": [],
+            "latency_ms": 0,
+            "denied_links": 0,
+            "attempted_links": 0,
+            "conflicting_fields": []
+          },
+          "latency_ms": 11,
+          "model_mode": "scripted",
+          "model_name": "scripted",
+          "context_ids": [
+            "offer:1"
+          ],
+          "model_calls": 0,
+          "price_as_of": null,
+          "sender_evidence": "unverified",
+          "negotiation_move": "hold_quote"
+        }
+      ]
+    },
+    {
+      "id": 28,
+      "name": "Keep the higher production budget when licensing is separate",
+      "passed": true,
+      "expected": {
+        "action": "counteroffer",
+        "negotiation_move": "open_quote",
+        "total": 280000,
+        "within_word_budget": true,
+        "question_count": 1,
+        "reply_includes": [
+          "USD 2,800.00 works for one reel",
+          "30-day paid social license"
+        ],
+        "deliveries": 0
+      },
+      "actual": {
+        "action": "counteroffer",
+        "total": 280000,
+        "items": {
+          "reel": 280000
+        },
+        "questions": [
+          "separate paid usage budget"
+        ],
+        "surcharge": 0,
+        "paid_usage_separate": true,
+        "private_floor_disclosed": false,
+        "deliveries": 0,
+        "messages": 1,
+        "drafts": 1,
+        "old_draft_status": "PENDING",
+        "sent_version": null,
+        "duplicate_deliveries": 0,
+        "recovered": false,
+        "document_ids": [],
+        "denied_links": 0,
+        "retrieved_sections": [],
+        "negotiation_move": "open_quote",
+        "sender_evidence": "unverified",
+        "greeting": "Hi,",
+        "words": 31,
+        "within_word_budget": true,
+        "question_count": 1,
+        "reply_includes": [
+          "USD 2,800.00 works for one reel",
+          "30-day paid social license"
+        ]
+      },
+      "failures": [],
+      "checks": {
+        "action": {
+          "expected": "counteroffer",
+          "actual": "counteroffer",
+          "passed": true
+        },
+        "negotiation_move": {
+          "expected": "open_quote",
+          "actual": "open_quote",
+          "passed": true
+        },
+        "total": {
+          "expected": 280000,
+          "actual": 280000,
+          "passed": true
+        },
+        "within_word_budget": {
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        "question_count": {
+          "expected": 1,
+          "actual": 1,
+          "passed": true
+        },
+        "reply_includes": {
+          "expected": [
+            "USD 2,800.00 works for one reel",
+            "30-day paid social license"
+          ],
+          "actual": [
+            "USD 2,800.00 works for one reel",
+            "30-day paid social license"
+          ],
+          "passed": true
+        },
+        "deliveries": {
+          "expected": 0,
+          "actual": 0,
+          "passed": true
+        }
+      },
+      "extraction": {},
+      "quality": {
+        "relevance": true,
+        "clarity": true,
+        "brevity": true,
+        "professionalism": true,
+        "grounding": true
+      },
+      "telemetry": [
+        {
+          "tools": [
+            "extract_terms",
+            "evaluate_policy",
+            "select_negotiation_move",
+            "render_draft"
+          ],
+          "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0
+          },
+          "turn_id": "e0fe4ca6-3d12-4cef-95e0-bfd9e52aaaa1",
+          "cost_usd": 0,
+          "execution": {
+            "mode": "scripted",
+            "model": "scripted",
+            "provider": "scripted",
+            "workflow": "negotiation-v4"
+          },
+          "retrieval": {
+            "sources": [],
+            "latency_ms": 0,
+            "denied_links": 0,
+            "attempted_links": 0,
+            "conflicting_fields": []
+          },
+          "latency_ms": 11,
+          "model_mode": "scripted",
+          "model_name": "scripted",
+          "context_ids": [],
+          "model_calls": 0,
+          "price_as_of": null,
+          "sender_evidence": "unverified",
+          "negotiation_move": "open_quote"
+        }
+      ]
+    }
+  ],
+  "metrics": {
+    "scenario_success": 100.0,
+    "business_rule_compliance": 100.0,
+    "unauthorized_attempts": 2,
+    "unauthorized_completed": 0,
+    "duplicate_deliveries": 0,
+    "recovery_success": 100.0,
+    "retrieval_recall": 100.0,
+    "retrieval_precision": 100.0,
+    "denied_links": 1,
+    "extraction_accuracy": 100.0,
+    "sender_evidence_accuracy": 100.0,
+    "negotiation_move_accuracy": 100.0,
+    "average_draft_words": 25.2,
+    "draft_quality_rubric": 100.0,
+    "average_latency_ms": 15.5,
+    "p95_latency_ms": 37,
+    "estimated_cost_usd": 0,
+    "estimated_cost_per_turn_usd": 0
+  }
+}
