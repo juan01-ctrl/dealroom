@@ -17,6 +17,7 @@ class ThreadSummary(BaseModel):
 class Capabilities(BaseModel):
     evaluations: bool
     simulated_failures: bool
+    can_write: bool = True
 
 
 class SessionView(BaseModel):
@@ -74,6 +75,11 @@ class DeliveryView(BaseModel):
     created_at: datetime
     mail_provider: str | None = None
     provider_receipt_id: str | None = None
+    revision: int | None = None
+
+
+class RecentReceipt(DeliveryView):
+    draft_id: UUID
 
 
 class RecoverableTurn(BaseModel):
@@ -89,3 +95,13 @@ class ThreadSnapshot(ThreadSummary):
     timeline: list[TimelineEntry]
     timeline_has_more: bool
     recoverable_turns: list[RecoverableTurn]
+    history_cursor: str | None = None
+    unresolved_delivery_revision: int | None = None
+    recent_receipts: list[RecentReceipt] | None = None
+
+
+class HistoryPage(BaseModel):
+    messages: list[ThreadMessage]
+    drafts: list[DraftView]
+    deliveries: list[DeliveryView]
+    history_cursor: str | None

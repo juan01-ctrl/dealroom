@@ -38,6 +38,8 @@ export default function Home() {
   const selected = useRef("");
   const writing = useRef(false);
   const threadPicker = useRef<HTMLSelectElement>(null);
+  const creator = session?.workspace_kind === "creator";
+  const canWrite = session?.capabilities?.can_write ?? !creator;
 
   const updateProfile = useCallback((next: Profile) => {
     setProfile((current) => current && current.version > next.version ? current : next);
@@ -168,7 +170,7 @@ export default function Home() {
   }, [expired, latestDelivery, profileRefresh, updateProfile]);
 
   async function write<T>(work: () => Promise<T>, success: (result: T) => void, report = true) {
-    if (writing.current || expired) return false;
+    if (!canWrite || writing.current || expired) return false;
     writing.current = true;
     setBusy(true);
     setWriteError("");
@@ -199,7 +201,6 @@ export default function Home() {
   const active = snapshot?.id === thread ? snapshot : undefined;
   const email = emails[thread] ?? "";
   const locked = busy || expired;
-  const creator = session?.workspace_kind === "creator";
   const previousDraft = emails[orphanedThread];
 
   function restorePickerFocus() {
@@ -209,9 +210,11 @@ export default function Home() {
   return <Shell active="negotiation" mode={session?.mode} creator={creator}>
     <main className="workspace">
       <div className="workspace-heading"><div>
-        <h1>Negotiation workspace</h1><p>Review brand offers, inspect agent decisions, and approve every reply.</p>
+        <h1>Negotiation workspace</h1><p>{canWrite
+          ? "Review brand offers, inspect agent decisions, and approve every reply."
+          : "You have read-only access to this workspace."}</p>
       </div>{session && <div className="thread-picker">
-        {newLabel !== undefined ? <form onSubmit={(event) => {
+        {canWrite && newLabel !== undefined ? <form onSubmit={(event) => {
           event.preventDefault();
           if (locked) return;
           const label = newLabel.trim() || "Campaign";
@@ -231,7 +234,7 @@ export default function Home() {
         }}><input aria-label="Negotiation name" placeholder="Campaign name" autoFocus maxLength={60} required value={newLabel} onChange={(event) => setNewLabel(event.target.value)} /><Button type="submit" variant="primary" disabled={locked}>Create</Button><Button onClick={() => { setNewLabel(undefined); pendingCreate.current = null; restorePickerFocus(); }}>Cancel</Button></form> :
           <><div className="select-wrap"><select ref={threadPicker} aria-label="Negotiation" value={thread} disabled={busy || !session.threads.length} onChange={(event) => choose(event.target.value)}>
             {session.threads.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
-          </select><ChevronDown size={14} aria-hidden="true" /></div><Button disabled={locked} onClick={() => setNewLabel("")}><Plus size={15} /> New</Button></>}
+          </select><ChevronDown size={14} aria-hidden="true" /></div>{canWrite && <Button disabled={locked} onClick={() => setNewLabel("")}><Plus size={15} /> New</Button>}</>}
       </div>}</div>
       {notice && <Status className="workspace-notice">{notice}</Status>}
       {expired ? <Alert>Your session expired. <Button variant="text" disabled={connecting} onClick={retrySession}>Reconnect</Button>{initialError}</Alert> : <>
@@ -240,7 +243,7 @@ export default function Home() {
         {readError && <Alert>Could not refresh the negotiation. {readError} <Button variant="text" onClick={requestRefresh}>Refresh</Button></Alert>}
         {profileError && <Alert>Could not refresh the creator profile. {profileError} <Button variant="text" onClick={() => setProfileRefresh((value) => value + 1)}>Refresh profile</Button></Alert>}
       </>}
-      {!creator && previousDraft && <div className="preserved-draft">
+      {canWrite && !creator && previousDraft && <div className="preserved-draft">
         <label htmlFor="previous-draft">Unsent brand email from the previous session</label>
         <textarea id="previous-draft" readOnly value={previousDraft} rows={3} />
         <Button disabled={locked || !thread || Boolean(email)} onClick={() => {
@@ -250,7 +253,7 @@ export default function Home() {
       </div>}
       {profile && session ? <div className="workspace-grid">
         {active ? <NegotiationThread key={thread} snapshot={active} busy={locked} email={email} setEmail={setEmail}
-          creator={creator} simulateFailures={!creator && capabilities(session).simulated_failures}
+          creator={creator} canWrite={canWrite} simulateFailures={!creator && capabilities(session).simulated_failures}
           send={() => {
             const body = email.trim();
             if (locked || !body) return;
@@ -272,7 +275,7 @@ export default function Home() {
           transition={(choice) => void write(() => api.transition(thread, choice, active.revision), () => setNotice("Negotiation updated."))}
           recover={(turn, action) => void write(() => api.recovery(thread, turn.job_id, action, active.revision), () => setNotice(action === "retry" ? "Retry scheduled." : "Failed turn skipped."))}
         /> : <div className="loading" role="status">{!thread ? "No negotiations yet." : readError ? "Waiting to refresh the negotiation…" : "Opening negotiation…"}</div>}
-        <CreatorProfile profile={profile} creator={creator} scope={session.threads[0]?.id} busy={locked}
+        <CreatorProfile profile={profile} creator={creator} canWrite={canWrite} scope={session.threads[0]?.id} busy={locked}
           reload={async () => {
             try {
               const next = await api.profile();

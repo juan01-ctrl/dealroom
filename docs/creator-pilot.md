@@ -1,0 +1,33 @@
+# Bounded creator pilot
+
+## Authorize the cohort
+
+The product owner and on-call owner agree on the workspaces, maximum cohort size, provider and mailbox scope, start and end dates, daily mail and model limits, review cadence, and incident contact before enabling traffic. Assign a backup operator and a negotiation reviewer. Capture the approved candidate SHA and links to the staging, restore, retention, and blind quality evidence in the launch record. Use the 10-case held-out review for the first gate and a separate, authorized sample for broader pilot decisions. [Engineering roadmap](superpowers/plans/2026-11-26-dealroom-engineering-roadmap.md) · [Quality gate](live-negotiation-review.md) · [Operations](operations.md)
+
+## Onboard one workspace
+
+1. Verify the selected environment, account identity, workspace approval, sender authorization, configured counterpart and retention agreement. Get the verified claims from the trusted gateway and use `IdentityStore.provision_workspace` in the authorized operator environment. Grant `owner` or `approver` access only to people authorized to send. Enroll read-only reviewers with the `viewer` membership.
+2. Select the approved thread. Use `MailStore.configure_route` to bind the provider, unique inbound alias, verified sending mailbox and counterpart. Set up the matching route at the relay and confirm it verifies the actual envelope recipient and sender. Register any approved source brief with its expected revision and scope. [Identity and mail routes](real-mail-integration.md) · [Registered briefs](production-briefs.md)
+3. Verify access using the creator and viewer identities and exercise one authorized synthetic rehearsal over the pilot path. Confirm duplicate inbound acknowledgements resolve to the same job and verify one relay receipt for one exact approval. Record the route, verified identities, staged rehearsal evidence and operator in the protected record.
+4. Have a second operator repeat the checks using keyboard only and a screen reader. Check that the creator can reach the draft, inspect the sender, recipient, reply subject and body, approve the exact revision, and understand the result and recovery notices. Check that focus remains visible and returns to a useful location after a refresh or failure. The viewer should be able to read the workspace and should get clear read-only guidance without an active send or mutation path. Record browser, screen reader, role, steps and results. Treat missing guidance or any failed rehearsal step as open pilot evidence before onboarding real traffic.
+
+## Review a draft and recover
+
+| Situation | Creator and operator action |
+| --- | --- |
+| Ready to approve | The creator confirms the current draft and its complete envelope before choosing **Approve & send**. If any term, body, recipient, subject or route changes, refresh and review the newly bound envelope. Owner and approver memberships are allowed to send. |
+| Brief unavailable | Open the linked brief evidence in the inspector. Ask the workspace operator to verify the approved URL, revision, and workspace access, or ask the counterpart to state the missing terms in writing. Review the updated draft before making any commercial commitment. |
+| Delivery pending confirmation | Keep the approval and original delivery key. Ask on-call to reconcile it using the receipt lookup in the delivery runbook. Wait for authoritative acceptance or rejection before another send attempt. A relay acknowledgement records handoff and does not establish inbox delivery. |
+| Inbound mail limit | The relay retains the original inbound event on HTTP 429, follows `Retry-After` and retries with the same event ID and payload. Tell the creator the pending submission is held at the relay. Verify the original job appears after admission. |
+| Daily model limit | The analysis job remains deferred until budget is available. On-call checks the protected operations view for model-budget work and its release time. Tell the creator the existing turn is waiting for analysis. |
+
+[Exact-envelope approval and reconciliation](real-mail-integration.md#review-and-delivery) · [Queue operations](operations.md#drain-versioned-jobs-during-release)
+
+## Monitor, pause and remove
+
+1. Page the on-call owner on an aged pending confirmation, growing oldest-ready queue, failed recent backup or restore, repeated health failure, missing compatible worker, or delayed model work beyond the cohort's agreed limit. Link the protected operations and release evidence from the incident record. Review the first exceptions with the negotiation reviewer and record usability, disposition, time to reviewable draft, and estimated model cost. [Pilot outcome reports](live-negotiation-review.md#observe-creator-outcomes-during-the-pilot)
+2. Halt promotion immediately for a critical quality failure, lost accepted mail, duplicate send or failed restore drill. If traffic is active, pause affected relay ingestion and outbound dispatch, preserve already accepted events and pending handoffs, and notify the product and operations owners. Reconcile by original IDs and review the restore or release evidence before the owners authorize resumption.
+3. To remove a workspace, stop routing new messages at the relay, disable its active memberships while retaining approval attribution, and revoke its application routes. Route and membership administration is operator-managed. Apply changes in the confirmed target workspace. For application route removal, lock the tenant before deleting its scoped `mail_routes` rows using the same tenant lock as route configuration. Keep retired inbound aliases retired. Verify old identities cannot access the workspace, new events for the retired route are rejected, and exact previously admitted events remain replayable for the agreed window. Keep receipt lookup available for handoffs already started.
+4. Close eligible negotiations and run a read-only retention preview after resolving pending deliveries and jobs. Apply deletion only under the approved policy and replay window. Verify the separate lifecycles for workspace and account records, briefs, relay and provider data, traces and backups. Record which systems were checked, who checked them, when backups expire, and how deletion will be reapplied after a restore. [Negotiation retention](creator-retention.md)
+
+Each launch, pause, resumption and removal decision belongs in the protected pilot record with its date, decision owner, candidate identity, and evidence links. Share aggregate counts and durations with the release record and keep commercial text in the authorized workspace.

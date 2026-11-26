@@ -23,11 +23,11 @@ export default defineRailway((ctx) => {
     },
   });
 
-  function worker(lane: "negotiation" | "evaluation") {
+  function worker(lane: "analysis" | "delivery" | "evaluation") {
     return service(`worker-${lane}`, {
       preDeploy: "python -m app.migrate",
       start: `python -m app.worker --lane ${lane}`,
-      // Store the matching provider credential on each worker service.
+      // Give model credentials to analysis/evaluation and mail relay credentials to delivery.
       env: {
         ...shared,
         LIVE_DAILY_MODEL_CALLS: ctx.shared.LIVE_DAILY_MODEL_CALLS,
@@ -35,5 +35,5 @@ export default defineRailway((ctx) => {
     });
   }
 
-  return project("dealroom", { resources: [db, api, worker("negotiation"), worker("evaluation")] });
+  return project("dealroom", { resources: [db, api, worker("analysis"), worker("delivery"), worker("evaluation")] });
 });

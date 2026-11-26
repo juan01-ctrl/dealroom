@@ -6,13 +6,14 @@ The application includes the contracts for an identity gateway and a mail relay.
 
 ## Configuration
 
-Set `REAL_MAIL_ENABLED=1` in the API and worker environments when the integration is authorized. Use independent secrets for each credential.
+Set `REAL_MAIL_ENABLED=1` in the API, analysis worker and delivery worker environments when the integration is authorized. Use independent secrets for each credential.
 
 | Service | Setting | Purpose |
 | --- | --- | --- |
 | API | `CREATOR_IDENTITY_ISSUER` | Expected issuer in the gateway assertion |
 | API | `CREATOR_IDENTITY_SECRET` | Shared signing secret with the identity gateway |
 | API | `MAIL_PROVIDER` | Lowercase relay identifier used by workspace routes |
+| API | `CREATOR_DAILY_MAIL_LIMIT` | Maximum new messages per workspace per UTC day. Defaults to 1,000. |
 | API | `MAIL_INBOUND_SECRET` | Shared signing secret with the inbound relay |
 | Worker | `MAIL_PROVIDER` | Same relay identifier configured for the workspace |
 | Worker | `MAIL_RELAY_URL` | HTTPS base URL for send and receipt lookup |
@@ -55,11 +56,11 @@ The relay sends a JSON request to `POST /integrations/mail/inbound` of at most 1
 }
 ```
 
-Retries reuse the same provider event ID and normalized payload. Each retry may have a newly signed timestamp. Exact retries return the original revision and job ID. A changed payload under the same provider event ID is a conflict. The API routes by the provider and enrolled mailbox pair, so the relay cannot select a workspace or negotiation in its payload.
+The relay persists an inbound message before acknowledging its upstream transport. Retries reuse the same durable provider event ID and normalized payload for that message, including across different webhook attempts. Each retry may have a newly signed timestamp. Exact retries return the original revision and job ID. A changed payload under the same provider event ID is a conflict. New events beyond the daily workspace limit receive HTTP 429 with Retry-After. Keep the original event in the relay queue and retry it later. An exact replay still returns the original receipt at the limit. The API routes by the provider and enrolled mailbox pair, so the relay cannot select a workspace or negotiation in its payload.
 
 ## Review and delivery
 
-The draft API includes the sender, recipient, reply subject, and a digest alongside the exact draft body. A real-mail approval must submit the displayed digest as `mail_digest`. The transaction stores the signed-in approver's account ID and the envelope identity together with the existing draft, policy, and thread versions. The worker compares the exact stored payload against the current route and current draft before beginning provider handoff.
+The draft API includes the sender, recipient, reply subject, and a digest alongside the exact draft body. A real-mail approval must submit the displayed digest as `mail_digest`. The transaction stores the signed-in approver's account ID and the envelope identity together with the existing draft, policy, and thread versions. The worker compares the exact stored payload against the current route and current draft in a short transaction. The commit of that validated attempt is the handoff boundary. A closure, revocation or policy change before the commit can block the send. Edits after the commit cannot cancel that immutable envelope.
 
 The relay's `POST /deliveries` receives the provider idempotency key in the `Idempotency-Key` header and the JSON `idempotency_key` field. The JSON also contains `from`, `to`, `subject`, and `text`. The relay must send from the configured verified mailbox, preserve the exact approved recipient, subject, and text, and durably bind the key to those fields. A duplicate key with a different payload must be rejected before any send. Route changes require reviewing a fresh bound envelope.
 
@@ -73,7 +74,7 @@ The relay's `POST /deliveries` receives the provider idempotency key in the `Ide
 
 Roll out the real-mail-compatible API and all workers before enrolling a real workspace. Older analysis and maintenance processes assume demo data.
 
-The worker commits an attempt before first dispatch. A timeout, lost response, process exit, or unavailable lookup leaves it in `PENDING_CONFIRMATION`. Subsequent worker executions perform receipt lookup using the original key. An unresolved attempt blocks a new approval in the same negotiation until the relay confirms the earlier outcome. A 404 or malformed response supplies no delivery evidence. Provider acceptance records the receipt and advances the thread only if its approved draft is still current. Treat upstream receipt acceptance as a handoff status, distinct from recipient inbox delivery or a read acknowledgment.
+The worker commits an attempt before first dispatch and releases tenant and negotiation row locks before contacting the relay. The per-approval advisory lock supervises the operation and serializes receipt reconciliation. A timeout, lost response, process exit, or unavailable lookup leaves it in `PENDING_CONFIRMATION`. Subsequent worker executions perform receipt lookup using the original key, including attempts created by earlier worker versions. An unresolved attempt blocks a new approval in the same negotiation until the relay confirms the earlier outcome. A 404 or malformed response supplies no delivery evidence. Provider acceptance records the receipt and advances the thread only if its approved draft is still current. Treat upstream receipt acceptance as a handoff status, distinct from recipient inbox delivery or a read acknowledgment.
 
 Operators can reconcile a pending attempt after automatic retries are exhausted using the worker environment.
 

@@ -4,18 +4,19 @@ import { CURRENCIES, isCurrency, isTone, TONES } from "../contracts";
 import { ApiError, errorMessage, money, type Policy, type Profile } from "../lib";
 import { Alert, Button, Field, Panel } from "./ui";
 
-export default function CreatorProfile({ profile, creator, scope, busy, save, reload }: {
-  profile: Profile; creator: boolean; scope: string | undefined; busy: boolean;
+export default function CreatorProfile({ profile, creator, canWrite, scope, busy, save, reload }: {
+  profile: Profile; creator: boolean; canWrite: boolean; scope: string | undefined; busy: boolean;
   save: (version: number, policy: Policy) => Promise<boolean>;
   reload: () => Promise<Profile>;
 }) {
-  const [editor, setEditor] = useState<{ version: number; policy: Policy; scope: string | undefined }>();
+  const [editorState, setEditor] = useState<{ version: number; policy: Policy; scope: string | undefined }>();
   const [conflict, setConflict] = useState(false);
   const [error, setError] = useState("");
   const [reloading, setReloading] = useState(false);
   const editButton = useRef<HTMLButtonElement>(null);
   const currency = useRef<HTMLSelectElement>(null);
   const reloadButton = useRef<HTMLButtonElement>(null);
+  const editor = canWrite ? editorState : undefined;
   const policy = editor?.policy ?? profile.data;
   const scopeChanged = Boolean(editor && editor.scope !== scope);
 
@@ -51,7 +52,7 @@ export default function CreatorProfile({ profile, creator, scope, busy, save, re
   }
 
   return <Panel as="aside" className="profile-panel" aria-label="Creator profile">
-    <div className="panel-heading"><UserRound size={16} /><h2>Creator profile</h2><Button ref={editButton} variant="icon" title="Edit policy" aria-label="Edit policy" disabled={Boolean(editor) || busy} onClick={() => edit()}><Settings2 size={16} /></Button></div>
+    <div className="panel-heading"><UserRound size={16} /><h2>Creator profile</h2>{canWrite && <Button ref={editButton} variant="icon" title="Edit policy" aria-label="Edit policy" disabled={Boolean(editor) || busy} onClick={() => edit()}><Settings2 size={16} /></Button>}</div>
     <div className="profile-body">
       {!creator && <div className="creator"><div className="avatar">MR</div><div><strong>Maya Rivers</strong><span>Content creator</span></div></div>}
       {editor ? <form className="profile-form" onSubmit={async (event) => {
@@ -95,8 +96,8 @@ export default function CreatorProfile({ profile, creator, scope, busy, save, re
           <div><dt>Lead time</dt><dd>{profile.data.lead_days} days</dd></div>
           <div><dt>Max. exclusivity</dt><dd>{profile.data.max_exclusive_days} days</dd></div>
           <div><dt>Tone</dt><dd className="capitalize">{profile.data.tone}</dd></div></dl></div>
-        {profile.suggested_tone && <div className="privacy"><span>Suggested tone: {profile.suggested_tone}. <Button variant="text" disabled={busy} onClick={() => edit(profile.suggested_tone ?? undefined)}>Review suggestion</Button></span></div>}
-        <Button className="full" disabled={busy} onClick={() => edit()}>Edit creator policy</Button>
+        {profile.suggested_tone && <div className="privacy"><span>Suggested tone: {profile.suggested_tone}. {canWrite && <Button variant="text" disabled={busy} onClick={() => edit(profile.suggested_tone ?? undefined)}>Review suggestion</Button>}</span></div>}
+        {canWrite && <Button className="full" disabled={busy} onClick={() => edit()}>Edit creator policy</Button>}
         <div className="privacy"><LockKeyhole size={13} /><span>{creator ? "Pricing floors are private to this workspace." : "Pricing floors are private to the creator."}</span></div>
       </>}
     </div>

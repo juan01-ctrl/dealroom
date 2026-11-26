@@ -1,9 +1,9 @@
 import { ArrowDownLeft, ArrowRight, Check, ChevronDown, CircleAlert, ClipboardPenLine, ExternalLink, Mail, Send, Sparkles, X } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { isTone, TONES } from "../contracts";
-import { humanize, timeLabel, type Draft, type Fault, type Proposal, type RecoverableTurn, type RecoveryAction, type ReviewAction, type Snapshot, type Transition } from "../lib";
+import { api, errorMessage, humanize, timeLabel, type Draft, type Fault, type HistoryPage, type Proposal, type RecoverableTurn, type RecoveryAction, type ReviewAction, type Snapshot, type Transition } from "../lib";
 
-import { Button, Field, Panel, Status } from "./ui";
+import { Alert, Button, Field, Panel, Status } from "./ui";
 
 export const REFERENCE = `From: Jordan Lee <jordan@northstar.example>
 To: Maya Rivers <maya@creator.example>
@@ -67,8 +67,9 @@ function BrandEmail({ body, createdAt }: { body: string; createdAt: string }) {
   </article>;
 }
 
-function DraftCard({ draft, busy, review, creator }: {
-  draft: Draft; busy: boolean; creator: boolean; review: (draft: Draft, action: ReviewAction, proposal?: Proposal) => Promise<boolean>;
+function DraftCard({ draft, busy, review, creator, active }: {
+  draft: Draft; busy: boolean; creator: boolean; active: boolean;
+  review: (draft: Draft, action: ReviewAction, proposal?: Proposal) => Promise<boolean>;
 }) {
   const [editing, setEditing] = useState(false);
   const [proposal, setProposal] = useState(draft.proposal);
@@ -79,7 +80,7 @@ function DraftCard({ draft, busy, review, creator }: {
     setEditing(false);
     requestAnimationFrame(() => editButton.current?.focus());
   }
-  const canReview = draft.status === "PENDING" || draft.status === "APPROVED";
+  const canReview = active && (draft.status === "PENDING" || draft.status === "APPROVED");
   async function submit(action: ReviewAction, proposal?: Proposal) {
     if (await review(draft, action, proposal)) {
       setEditing(false);
@@ -97,7 +98,7 @@ function DraftCard({ draft, busy, review, creator }: {
       <div><dt>Subject</dt><dd>{draft.mail.subject}</dd></div>
     </dl>}
     <div className="draft-copy">{draft.body}</div>
-    {editing ? <form className="edit-draft" onSubmit={async (e) => {
+    {editing && canReview ? <form className="edit-draft" onSubmit={async (e) => {
       e.preventDefault();
       if (!busy && canReview) await submit("edit", proposal);
     }}>
@@ -113,15 +114,93 @@ function DraftCard({ draft, busy, review, creator }: {
   </article>;
 }
 
-export default function NegotiationThread({ snapshot, busy, email, setEmail, send, review, fault, transition, recover, simulateFailures, creator }: {
+type HistoryItems = Pick<HistoryPage, "messages" | "drafts" | "deliveries">;
+
+function mergeBy<T>(older: T[], newer: T[], key: (item: T) => number | string) {
+  return [...new Map([...older, ...newer].map((item) => [key(item), item])).values()];
+}
+
+function mergeHistory(older: HistoryItems, newer: HistoryItems): HistoryItems {
+  const deliveries = mergeBy(older.deliveries, newer.deliveries, (item) => item.delivery_key)
+    .sort((a, b) => (a.revision ?? 0) - (b.revision ?? 0) || a.created_at.localeCompare(b.created_at));
+  const confirmedDrafts = new Set(deliveries.map((item) => item.draft_id));
+  return {
+    messages: mergeBy(older.messages, newer.messages, (item) => item.revision),
+    drafts: mergeBy(older.drafts, newer.drafts, (item) => item.id)
+      .map((draft): Draft => confirmedDrafts.has(draft.id) ? { ...draft, status: "SENT" } : draft)
+      .sort((a, b) => a.revision - b.revision || a.version - b.version || a.id.localeCompare(b.id)),
+    deliveries,
+  };
+}
+
+export default function NegotiationThread({ snapshot, busy, email, setEmail, send, review, fault, transition, recover, simulateFailures, creator, canWrite }: {
   snapshot: Snapshot; busy: boolean; email: string; setEmail: (value: string) => void; send: () => void;
   review: (draft: Draft, action: ReviewAction, proposal?: Proposal) => Promise<boolean>;
   fault: (boundary: Fault) => void; transition: (action: Transition) => void;
-  recover: (turn: RecoverableTurn, action: RecoveryAction) => void; simulateFailures: boolean; creator: boolean;
+  recover: (turn: RecoverableTurn, action: RecoveryAction) => void; simulateFailures: boolean; creator: boolean; canWrite: boolean;
 }) {
   const [controls, setControls] = useState(false);
+  const [history, setHistory] = useState<HistoryPage>();
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [historyError, setHistoryError] = useState("");
+  const [loaded, setLoaded] = useState<{ count: number; revision: number }>();
+  const historyRequest = useRef<AbortController>(null);
+  const threadContent = useRef<HTMLDivElement>(null);
+  const historyStatus = useRef<HTMLDivElement>(null);
+  const historyCursor = history ? history.history_cursor : snapshot.history_cursor;
+  const currentHistory = useMemo(() => snapshot.recent_receipts?.length
+    ? { ...snapshot, deliveries: [...snapshot.deliveries, ...snapshot.recent_receipts] }
+    : snapshot, [snapshot]);
+  const visibleHistory = useMemo(() => history ? mergeHistory(history, currentHistory) : currentHistory, [history, currentHistory]);
   const closed = snapshot.status === "CLOSED";
   const recoverable = snapshot.recoverable_turns ?? [];
+  const rejectedDelivery = snapshot.drafts.some((item) => item.revision === snapshot.revision && item.status === "DELIVERY_FAILED");
+
+  useEffect(() => () => historyRequest.current?.abort(), []);
+  useEffect(() => {
+    setHistory((current) => {
+      if (!current) return current;
+      // If polling missed a whole page, resume below the latest snapshot to fill the gap.
+      const messageRevisions = new Set(current.messages.map((item) => item.revision));
+      const draftIds = new Set(current.drafts.map((item) => item.id));
+      const overlap = currentHistory.messages.some((item) => messageRevisions.has(item.revision))
+        || currentHistory.drafts.some((item) => draftIds.has(item.id));
+      return { ...mergeHistory(current, currentHistory),
+        history_cursor: overlap ? current.history_cursor : currentHistory.history_cursor ?? current.history_cursor };
+    });
+  }, [currentHistory]);
+  useEffect(() => {
+    if (loaded) {
+      const target = threadContent.current?.querySelector<HTMLElement>(`[data-revision="${loaded.revision}"]`);
+      (target ?? historyStatus.current)?.focus();
+    }
+  }, [loaded]);
+
+  async function loadHistory() {
+    if (!historyCursor || historyRequest.current) return;
+    const controller = new AbortController();
+    historyRequest.current = controller;
+    setHistory((current) => current ?? { ...currentHistory, history_cursor: historyCursor });
+    setLoadingHistory(true);
+    setHistoryError("");
+    try {
+      const page = await api.history(snapshot.id, historyCursor, controller.signal);
+      setHistory((current) => ({
+        ...mergeHistory(page, current ?? currentHistory),
+        history_cursor: current && current.history_cursor !== historyCursor ? current.history_cursor : page.history_cursor,
+      }));
+      setLoaded({
+        count: page.messages.length + page.drafts.length,
+        revision: Math.min(...page.messages.map((item) => item.revision), ...page.drafts.map((item) => item.revision)),
+      });
+    } catch (reason) {
+      if (!controller.signal.aborted) setHistoryError(errorMessage(reason));
+    } finally {
+      historyRequest.current = null;
+      if (!controller.signal.aborted) setLoadingHistory(false);
+    }
+  }
+
   const turns = useMemo(() => {
     type Turn = { message?: Snapshot["messages"][number]; drafts: Draft[] };
     const grouped = new Map<number, Turn>();
@@ -130,10 +209,10 @@ export default function NegotiationThread({ snapshot, busy, email, setEmail, sen
       grouped.set(revision, turn);
       return turn;
     }
-    for (const message of snapshot.messages) at(message.revision).message = message;
-    for (const draft of snapshot.drafts) at(draft.revision).drafts.push(draft);
+    for (const message of visibleHistory.messages) at(message.revision).message = message;
+    for (const draft of visibleHistory.drafts) at(draft.revision).drafts.push(draft);
     return [...grouped.entries()].sort(([first], [second]) => first - second);
-  }, [snapshot.messages, snapshot.drafts]);
+  }, [visibleHistory.messages, visibleHistory.drafts]);
   const composer = useRef<HTMLTextAreaElement>(null);
 
   function loadExample(body: string) {
@@ -143,8 +222,8 @@ export default function NegotiationThread({ snapshot, busy, email, setEmail, sen
 
   return <Panel className="thread-panel" aria-label="Negotiation thread">
     <div className="panel-heading"><Mail size={16} /><h2>Negotiation thread</h2>
-      <Button variant="subtle" className="fault-button" type="button" onClick={() => setControls(!controls)} aria-expanded={controls}><CircleAlert size={14} /> Recovery controls <ChevronDown size={13} /></Button></div>
-    {controls && <div className="recovery-controls">
+      {canWrite && <Button variant="subtle" className="fault-button" type="button" onClick={() => setControls(!controls)} aria-expanded={controls}><CircleAlert size={14} /> Recovery controls <ChevronDown size={13} /></Button>}</div>
+    {canWrite && controls && <div className="recovery-controls">
       {simulateFailures && <>
         <Button disabled={busy || Boolean(snapshot.fault) || closed} onClick={() => fault("checkpoint")}>Fail after checkpoint</Button>
         <Button disabled={busy || Boolean(snapshot.fault) || closed} onClick={() => fault("delivery")}>Fail after delivery</Button>
@@ -157,29 +236,38 @@ export default function NegotiationThread({ snapshot, busy, email, setEmail, sen
       </div>)}
     </div>}
     {snapshot.fault && <Status><CircleAlert size={15} /> Failure armed after {snapshot.fault === "checkpoint" ? "the next analysis checkpoint" : "the next simulated delivery"}.</Status>}
-    <div className="thread-content">
+    <div className="thread-content" ref={threadContent}>
+      {historyCursor && <Button className="history-more" aria-disabled={loadingHistory} onClick={() => void loadHistory()}>
+        {loadingHistory ? "Loading earlier history…" : "Load earlier history"}
+      </Button>}
+      {historyError && <Alert>Could not load earlier history. {historyError}</Alert>}
+      {loaded && <div ref={historyStatus} tabIndex={-1}><Status>
+        {loaded.count ? "Earlier history loaded." : "No earlier history remains."}
+      </Status></div>}
       {!turns.length && <div className="empty-thread">
         <div className="empty-icon"><MessagesIcon /></div>
         {creator ? <h3>Waiting for a brand email</h3> : <>
           <h3>Start a brand negotiation</h3>
           <p>Send a simulated brand email to see how the agent applies Maya’s policy and prepares a draft for review.</p>
-          <Button disabled={closed} onClick={() => loadExample(REFERENCE)}>Load example offer <ArrowRight size={14} /></Button>
+          {canWrite && <Button disabled={closed} onClick={() => loadExample(REFERENCE)}>Load example offer <ArrowRight size={14} /></Button>}
         </>}
       </div>}
-      {turns.map(([revision, { message, drafts }]) => <div key={revision} className="turn">
+      {turns.map(([revision, { message, drafts }]) => <div key={revision} className="turn"
+        role="group" aria-label={`Revision ${revision}`} data-revision={revision} tabIndex={-1}>
         {message && <BrandEmail body={message.body} createdAt={message.created_at} />}
-        {drafts.map((draft) => <DraftCard key={draft.id} draft={draft} busy={busy} review={review} creator={creator} />)}
+        {drafts.map((draft) => <DraftCard key={draft.id} draft={draft} busy={busy} review={review} creator={creator} active={canWrite && revision === snapshot.revision} />)}
       </div>)}
       {snapshot.status === "ANALYZING" && <Status><Sparkles size={15} /> Analyzing offer…</Status>}
-      {snapshot.status === "FAILED" && <Status>Processing failed.
-        {recoverable.length > 0 && <Button variant="text" onClick={() => setControls(true)}>Review failed turns</Button>}
-        <Button variant="text" disabled={busy} onClick={() => transition("retry")}>Retry from checkpoint</Button>
+      {snapshot.status === "FAILED" && <Status>{rejectedDelivery ? "The mail provider rejected this reply." : "Processing failed."}
+        {canWrite && recoverable.length > 0 && <Button variant="text" onClick={() => setControls(true)}>Review failed turns</Button>}
+        {canWrite && !rejectedDelivery && <Button variant="text" disabled={busy} onClick={() => transition("retry")}>Retry from checkpoint</Button>}
       </Status>}
-      {snapshot.status === "REJECTED" && <Status>Draft rejected. <Button variant="text" disabled={busy} onClick={() => transition("reanalyze")}>Generate a fresh draft</Button></Status>}
-      {!!snapshot.deliveries.length && <details className="inbox"><summary><Send size={14} /> {creator ? "Delivery history" : "Simulated brand inbox"} <span className="version">{snapshot.deliveries.length}</span></summary>
-        {snapshot.deliveries.map((delivery) => <div key={delivery.delivery_key} className="delivered-message"><small>Delivered · {timeLabel(delivery.created_at)}</small><p>{delivery.body}</p></div>)}</details>}
+      {snapshot.status === "REJECTED" && <Status>Draft rejected. {canWrite && <Button variant="text" disabled={busy} onClick={() => transition("reanalyze")}>Generate a fresh draft</Button>}</Status>}
+      {snapshot.unresolved_delivery_revision != null && <Status>Awaiting delivery confirmation for revision {snapshot.unresolved_delivery_revision}.</Status>}
+      {!!visibleHistory.deliveries.length && <details className="inbox"><summary><Send size={14} /> {creator ? "Delivery history" : "Simulated brand inbox"} <span className="version">{visibleHistory.deliveries.length}</span></summary>
+        {visibleHistory.deliveries.map((delivery) => <div key={delivery.delivery_key} className="delivered-message"><small>Delivered · {delivery.revision != null && `Revision ${delivery.revision} · `}{timeLabel(delivery.created_at)}</small><p>{delivery.body}</p></div>)}</details>}
     </div>
-    {!creator && <form className="composer" onSubmit={(event) => { event.preventDefault(); send(); }}>
+    {canWrite && !creator && <form className="composer" onSubmit={(event) => { event.preventDefault(); send(); }}>
       <div className="composer-title"><label htmlFor="brand-email">Simulate a brand email</label>
         {!!snapshot.messages.length && <Button variant="text" disabled={closed} onClick={() => loadExample(FOLLOWUP)}>Load follow-up</Button>}</div>
       <textarea ref={composer} id="brand-email" value={email} maxLength={4000} onChange={(event) => setEmail(event.target.value)} rows={email.includes("\n") ? 8 : 3}

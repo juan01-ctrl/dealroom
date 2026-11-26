@@ -3,6 +3,7 @@ import os
 
 from .configuration import ConfigurationError, validate_configuration
 from .models import configured_model
+from .observability import langfuse_config
 from .storage import Store
 
 
@@ -17,6 +18,7 @@ def main():
     try:
         mode = validate_configuration("api")
         validate_configuration("worker")
+        langfuse_config(os.environ)
     except ConfigurationError as exc:
         raise SystemExit(str(exc)) from None
     try:

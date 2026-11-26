@@ -81,12 +81,38 @@ def read_campaign_brief(url: str, query: str) -> dict:
     }
 
 
-def collect_evidence(email):
-    sources, values, conflicts = [], {}, set()
+def read_registered_brief(url, lookup):
+    document = lookup(url)
+    if not document:
+        return {"status": "denied"}
+    sections = []
+    for section in document["sections"]:
+        terms = {key: value for key, value in section.items() if key != "id"}
+        if "exclusive_days" in terms:
+            terms["exclusive"] = True
+        if "usage_days" in terms or "usage_scope" in terms:
+            terms["advertising"] = True
+        sections.append({"id": section["id"], "terms": terms})
+    return {
+        "status": "read",
+        "document_id": document["document_id"],
+        "title": document["title"],
+        "revision": str(document["revision"]),
+        "candidate_sections": len(sections),
+        "sections": sections,
+    }
+
+
+def collect_evidence(email, lookup=None):
+    sources, values, conflicts, field_sources = [], {}, set(), {}
     selected_links = list(links(email))
     denied = max(0, len(selected_links) - MAX_LINKS)
     for url in selected_links[:MAX_LINKS]:
-        result = read_campaign_brief.invoke({"url": url, "query": email})
+        result = (
+            read_registered_brief(url, lookup)
+            if lookup is not None
+            else read_campaign_brief.invoke({"url": url, "query": email})
+        )
         if result["status"] != "read":
             denied += 1
             continue
@@ -98,6 +124,7 @@ def collect_evidence(email):
                 "revision": result["revision"],
                 "section_ids": [item["id"] for item in sections],
                 "candidate_sections": result["candidate_sections"],
+                **({"kind": "registered"} if lookup is not None else {}),
             }
         )
         for section in sections:
@@ -105,9 +132,20 @@ def collect_evidence(email):
                 if field in values and values[field] != value:
                     conflicts.add(field)
                 values[field] = value
+                locator = {
+                    "document_id": result["document_id"],
+                    "revision": result["revision"],
+                    "section_id": section["id"],
+                }
+                locations = field_sources.setdefault(field, [])
+                if locator not in locations:
+                    locations.append(locator)
     return {
         "sources": sources,
         "terms": {field: value for field, value in values.items() if field not in conflicts},
+        "field_sources": {
+            field: locations for field, locations in field_sources.items() if field not in conflicts
+        },
         "denied_links": denied,
         "attempted_links": min(len(selected_links), MAX_LINKS),
         "conflicting_fields": sorted(conflicts),

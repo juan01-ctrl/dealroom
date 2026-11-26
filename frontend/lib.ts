@@ -1,6 +1,6 @@
 import { SCHEMA_VERSION, schemas, type Fault, type Policy, type Proposal, type RecoveryAction, type ReviewAction, type Session, type Transition } from "./contracts";
 
-export type { Draft, Entry, Fault, Policy, Profile, Proposal, RecoverableTurn, RecoveryAction, ReviewAction, Run, Session, Snapshot, Thread, Transition } from "./contracts";
+export type { Draft, Entry, Fault, HistoryPage, Policy, Profile, Proposal, RecoverableTurn, RecoveryAction, ReviewAction, Run, Session, Snapshot, Thread, Transition } from "./contracts";
 
 type ErrorKind = "session" | "conflict" | "missing" | "temporary" | "invalid" | "request";
 
@@ -72,8 +72,12 @@ export const api = {
     return (await request("/negotiations", schemas.identifier, { method: "POST", body: { event_id, label } })).value;
   },
   snapshot(id: string, signal: AbortSignal, etag?: string) {
-    return etag ? request(threadPath(id), schemas.snapshot, { signal, etag })
-      : request(threadPath(id), schemas.snapshot, { signal });
+    const path = threadPath(id) + "?history=paged";
+    return etag ? request(path, schemas.snapshot, { signal, etag })
+      : request(path, schemas.snapshot, { signal });
+  },
+  async history(id: string, before: string, signal: AbortSignal) {
+    return (await request(threadPath(id) + "/history?before=" + encodeURIComponent(before), schemas.history, { signal })).value;
   },
   async timeline(id: string, before: number, signal: AbortSignal) {
     return (await request(threadPath(id) + "/timeline?before=" + before, schemas.timeline, { signal })).value;

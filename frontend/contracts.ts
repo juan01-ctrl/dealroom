@@ -59,14 +59,21 @@ const proposal = fields({ tone: isTone, invite_followup: boolean });
 const mail = fields({ sender: text, recipient: text, subject: text, digest: text });
 const draft = fields({
   id: text, version: integer, revision: integer, decision, proposal, body: text,
-  status: oneOf("PENDING", "APPROVED", "SENT", "STALE", "REJECTED"),
+  status: oneOf("PENDING", "APPROVED", "SENT", "STALE", "REJECTED", "DELIVERY_FAILED"),
   policy_version: integer, created_at: text, mail: optional(nullable(mail)),
 });
+const history = {
+  messages: array(fields({ body: text, revision: integer, created_at: text })),
+  drafts: array(draft),
+  deliveries: array(fields({ body: text, delivery_key: text, created_at: text,
+    revision: optional(nullable(integer)), draft_id: optional(text) })),
+};
 const entry = fields({ id: integer, revision: integer, kind: text, details: record(unknown), created_at: text });
 const recoverableTurn = fields({ job_id: text, revision: integer });
 const retrieval = fields({
   sources: array(fields({
     document_id: text, title: text, revision: text, section_ids: array(text), candidate_sections: integer,
+    kind: optional(oneOf("registered")),
   })),
   denied_links: integer, latency_ms: number,
 });
@@ -76,6 +83,7 @@ export const analysisDetails = fields({
   retrieval: optional(nullable(retrieval)),
   tools: optional(array(text)), context_ids: optional(array(text)),
   negotiation_move: optional(nullable(text)), sender_evidence: optional(text),
+  langfuse_trace_id: optional(text),
 });
 const check = fields({ expected: unknown, actual: unknown, passed: boolean });
 const evaluationResult = fields({
@@ -91,17 +99,20 @@ export const schemas = {
   threads: array(fields(thread)),
   session: fields({
     threads: array(fields(thread)), mode, workspace_kind: optional(oneOf("sandbox", "creator")),
-    capabilities: optional(fields({ evaluations: boolean, simulated_failures: boolean })),
+    capabilities: optional(fields({
+      evaluations: boolean, simulated_failures: boolean, can_write: optional(boolean),
+    })),
   }),
   snapshot: fields({
     ...thread, fault: nullable(oneOf("checkpoint", "delivery")),
-    messages: array(fields({ body: text, revision: integer, created_at: text })),
-    drafts: array(draft),
-    deliveries: array(fields({ body: text, delivery_key: text, created_at: text })),
+    ...history, history_cursor: optional(nullable(text)),
+    unresolved_delivery_revision: optional(nullable(integer)),
+    recent_receipts: optional(history.deliveries),
     timeline: array(entry),
     recoverable_turns: optional(array(recoverableTurn)),
     timeline_has_more: optional(boolean),
   }),
+  history: fields({ ...history, history_cursor: nullable(text) }),
   timeline: fields({ timeline: array(entry), has_more: boolean }),
   identifier: fields({ id: text }),
   inbound: fields({ job_id: text, revision: integer }),
@@ -116,6 +127,7 @@ export type Draft = Parsed<typeof draft>;
 export type Entry = Parsed<typeof entry>;
 export type Thread = Parsed<ReturnType<typeof fields<typeof thread>>>;
 export type Snapshot = Parsed<typeof schemas.snapshot>;
+export type HistoryPage = Parsed<typeof schemas.history>;
 export type Session = Parsed<typeof schemas.session>;
 export type Run = Parsed<typeof schemas.evaluation>;
 export type RecoverableTurn = Parsed<typeof recoverableTurn>;

@@ -1,0 +1,21 @@
+{
+  "manifest_version": "negotiation-dataset-v1",
+  "dataset_version": "held-out-v2",
+  "kind": "held_out",
+  "source_sha256": "c86979db38bee1d68b4bdbbb3066c006dd6780399346bf73ecb3bfe200a1f10f",
+  "turns": [
+    {"case_id": "H01", "turn": 1, "locale": "en", "rights_ambiguity": "clear", "brief_availability": "none"},
+    {"case_id": "H02", "turn": 1, "locale": "es", "rights_ambiguity": "clear", "brief_availability": "none"},
+    {"case_id": "H03", "turn": 1, "locale": "en", "rights_ambiguity": "clear", "brief_availability": "none"},
+    {"case_id": "H04", "turn": 1, "locale": "en", "rights_ambiguity": "clear", "brief_availability": "none"},
+    {"case_id": "H04", "turn": 2, "locale": "en", "rights_ambiguity": "clear", "brief_availability": "none"},
+    {"case_id": "H04", "turn": 3, "locale": "en", "rights_ambiguity": "clear", "brief_availability": "none"},
+    {"case_id": "H05", "turn": 1, "locale": "en", "rights_ambiguity": "ambiguous", "brief_availability": "none"},
+    {"case_id": "H06", "turn": 1, "locale": "en", "rights_ambiguity": "clear", "brief_availability": "none"},
+    {"case_id": "H07", "turn": 1, "locale": "en", "rights_ambiguity": "clear", "brief_availability": "available"},
+    {"case_id": "H08", "turn": 1, "locale": "fr", "rights_ambiguity": "clear", "brief_availability": "none"},
+    {"case_id": "H09", "turn": 1, "locale": "en", "rights_ambiguity": "clear", "brief_availability": "none"},
+    {"case_id": "H10", "turn": 1, "locale": "en", "rights_ambiguity": "clear", "brief_availability": "none"},
+    {"case_id": "H10", "turn": 2, "locale": "en", "rights_ambiguity": "clear", "brief_availability": "none"}
+  ]
+}

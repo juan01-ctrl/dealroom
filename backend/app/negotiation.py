@@ -115,6 +115,10 @@ def next_question(decision):
         return "Which currency is the budget in?"
     elif "currency" in pending:
         missing.append("the budget currency")
+    elif "budget in quote currency" in pending and decision.currency:
+        if not missing:
+            return f"I quote in {decision.currency}. Could you share the budget in {decision.currency}?"
+        missing.append(f"the budget in {decision.currency}")
     elif "budget" in pending:
         missing.append("the available budget")
     if missing:

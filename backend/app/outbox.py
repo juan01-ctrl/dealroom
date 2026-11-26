@@ -35,7 +35,8 @@ class Outbox:
                     AND earlier.state IN ('QUEUED','RUNNING')))
                 ORDER BY j.available_at,j.id FOR UPDATE OF j SKIP LOCKED LIMIT 1
             ) UPDATE jobs j SET state='RUNNING',attempts=attempts+1,
-                lease_until=now()+(%s * interval '1 second'), lease_token=%s, worker_id=%s
+                lease_until=now()+(%s * interval '1 second'), lease_token=%s, worker_id=%s,
+                payload=j.payload-'deferred_reason'
                 FROM candidate WHERE j.id=candidate.id RETURNING j.*""",
                 (
                     list(LANES[lane]),
@@ -60,6 +61,20 @@ class Outbox:
                 (job["id"], job["lease_token"]),
             ).fetchone()
             return row is not None
+
+    def defer_model_budget(self, job):
+        with self.store.connect() as db:
+            self.store.thread(db, job["tenant_id"], job["thread_id"], lock=True)
+            updated = db.execute(
+                """UPDATE jobs SET state='QUEUED',lease_until=NULL,attempts=attempts-1,
+                       payload=payload || '{"deferred_reason":"model_budget"}',
+                       available_at=((now() AT TIME ZONE 'UTC')::date+1)::timestamp AT TIME ZONE 'UTC'
+                   WHERE id=%s AND lease_token=%s AND state='RUNNING' RETURNING id""",
+                (job["id"], job["lease_token"]),
+            ).fetchone()
+            if updated:
+                event(db, job["tenant_id"], job["thread_id"], job["revision"], "model_budget_deferred")
+            return bool(updated)
 
     def finish(self, job, *, retry=False, simulated=False, busy=False, immediate=False, terminal=False):
         tenant, thread, revision = job["tenant_id"], job["thread_id"], job["revision"]

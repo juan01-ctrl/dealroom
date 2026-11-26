@@ -1,7 +1,9 @@
 import base64
 import hmac
 import json
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
+from threading import Event
 from uuid import uuid4
 
 import pytest
@@ -366,3 +368,118 @@ def test_reconciliation_restores_current_thread_after_exhausted_retries(store, r
             db.execute("SELECT state FROM jobs WHERE id=%s", (approval_id,)).fetchone()["state"]
             == "DONE"
         )
+
+
+def test_slow_relay_does_not_hold_workspace_write_locks(store, real_draft):
+    member, thread, mail, draft, envelope = real_draft
+    approval_id = approve(store, member, thread, draft, envelope.digest)
+    other = store.create_thread(member.tenant_id, "Another creator campaign")
+    mail.configure_route(
+        member.tenant_id,
+        other,
+        provider="relay",
+        inbound_address=route_address(other),
+        sender=envelope.sender,
+        recipient=envelope.recipient,
+    )
+    sending = Event()
+    release = Event()
+
+    class SlowRelay(FakeProvider):
+        def send(self, key, approved):
+            sending.set()
+            if not release.wait(timeout=10):
+                raise TimeoutError
+            return super().send(key, approved)
+
+    provider = SlowRelay()
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        delivery = pool.submit(mail.deliver, member.tenant_id, thread, approval_id, provider)
+        try:
+            assert sending.wait(timeout=5)
+            ingress = pool.submit(mail.ingest, verified_payload(other, event="while-sending"))
+            assert ingress.result(timeout=2)["revision"] == 1
+            # A later route edit leaves the already committed handoff bound to its original recipient.
+            mail.configure_route(
+                member.tenant_id,
+                thread,
+                provider="relay",
+                inbound_address=route_address(thread),
+                sender=envelope.sender,
+                recipient="new-counterparty@example.test",
+            )
+        finally:
+            release.set()
+        receipt, _ = delivery.result(timeout=5)
+    assert receipt["provider_receipt_id"] == f"provider-receipt-{approval_id}"
+    assert provider.sent == {approval_id: envelope}
+
+
+def test_interrupted_dispatch_keeps_committed_attempt_lookup_only(store, real_draft):
+    member, thread, mail, draft, envelope = real_draft
+    approval_id = approve(store, member, thread, draft, envelope.digest)
+
+    class InterruptedRelay(FakeProvider):
+        def send(self, key, approved):
+            with store.connect() as db:
+                attempt = db.execute(
+                    "SELECT state FROM mail_attempts WHERE tenant_id=%s AND approval_id=%s",
+                    (member.tenant_id, key),
+                ).fetchone()
+            assert attempt == {"state": "PENDING_CONFIRMATION"}
+            raise KeyboardInterrupt
+
+    with pytest.raises(KeyboardInterrupt):
+        mail.deliver(member.tenant_id, thread, approval_id, InterruptedRelay())
+    restarted = FakeProvider()
+    with pytest.raises(MailDeliveryPending):
+        mail.deliver(member.tenant_id, thread, approval_id, restarted)
+    assert restarted.calls == 0
+
+
+def test_operations_reports_aged_unconfirmed_mail(store, real_draft):
+    from app.operations import MAIL_CONFIRMATION_AGE_LIMIT_SECONDS, operations_status
+
+    member, thread, mail, draft, envelope = real_draft
+    approval_id = approve(store, member, thread, draft, envelope.digest)
+    provider = FakeProvider(ambiguous=True)
+    with pytest.raises(MailDeliveryPending):
+        mail.deliver(member.tenant_id, thread, approval_id, provider)
+    with store.connect() as db:
+        db.execute(
+            """UPDATE mail_attempts SET created_at=now()-(%s * interval '1 second')
+               WHERE tenant_id=%s AND approval_id=%s""",
+            (MAIL_CONFIRMATION_AGE_LIMIT_SECONDS + 1, member.tenant_id, approval_id),
+        )
+    health = operations_status(store, require_evaluation=False)
+    assert health["mail_confirmation"]["pending"] >= 1
+    assert health["mail_confirmation"]["oldest_seconds"] > MAIL_CONFIRMATION_AGE_LIMIT_SECONDS
+    assert health["status"] == "degraded"
+    provider.visible = True
+    assert mail.reconcile(member.tenant_id, thread, approval_id, provider)[0]
+    assert (
+        operations_status(store, require_evaluation=False)["mail_confirmation"]["oldest_seconds"]
+        <= MAIL_CONFIRMATION_AGE_LIMIT_SECONDS
+    )
+
+
+def test_pilot_metrics_reports_an_original_delivery_without_exposing_content(store, real_draft):
+    from datetime import UTC, datetime, timedelta
+
+    from app.pilot_metrics import collect_pilot_metrics
+
+    member, thread, mail, draft, envelope = real_draft
+    approval_id = approve(store, member, thread, draft, envelope.digest)
+    assert mail.deliver(member.tenant_id, thread, approval_id, FakeProvider())[0]
+    now = datetime.now(UTC)
+    metrics = collect_pilot_metrics(
+        store, member.tenant_id, now - timedelta(minutes=5), now + timedelta(seconds=1)
+    )
+    assert metrics["reviewable_analyses"] == metrics["delivered_as_written"] == 1
+    assert metrics["delivered_with_body_changes"] == metrics["explicitly_rejected"] == 0
+    assert metrics["estimated_published_analysis_cost_per_delivered_draft_usd"] == 0
+    assert metrics["p95_seconds_to_reviewable"] >= 0
+    assert envelope.body not in json.dumps(metrics)
+    demo, _ = store.create_session()
+    with pytest.raises(NotFound):
+        collect_pilot_metrics(store, demo, now - timedelta(minutes=5), now)

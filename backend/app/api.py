@@ -4,27 +4,38 @@ from collections import defaultdict, deque
 from contextlib import asynccontextmanager
 from threading import Lock
 from time import monotonic
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import FastAPI, HTTPException, Path, Query, Request, Response
 from fastapi.responses import JSONResponse, PlainTextResponse
+from psycopg_pool import PoolTimeout, TooManyRequests
 from pydantic import Field, model_validator
 
-from .api_contracts import ProfileView, SessionView, ThreadSnapshot, ThreadSummary, TimelinePage
+from .api_contracts import (
+    HistoryPage,
+    ProfileView,
+    SessionView,
+    ThreadSnapshot,
+    ThreadSummary,
+    TimelinePage,
+)
+from .campaign_briefs import IDENTIFIER, BriefRevision, CampaignBriefs
 from .configuration import validate_configuration
 from .domain import Input, Policy, Proposal
 from .evaluations import get_run, queue_run
 from .identity import IdentityStore, configured_identity_gateway
 from .mail_delivery import (
     MAX_INBOUND_BYTES,
+    CreatorMailBackpressure,
     MailAuthenticationError,
     MailStore,
     configured_inbound_gateway,
 )
 from .operations import operations_status
+from .read_models import HistoryCursor
 from .retrieval import brief_document
-from .storage import Conflict, Limit, NotFound, Store
+from .storage import Conflict, Limit, NotFound, Store, pooled_store
 
 COOKIE = "negotiation_session"
 
@@ -108,11 +119,17 @@ def create_app(store=None, *, identity_gateway=None, inbound_gateway=None):
     identity_gateway = identity_gateway or configured_identity_gateway()
     inbound_gateway = inbound_gateway or configured_inbound_gateway()
 
+    runtime_store = store
+
     @asynccontextmanager
     async def lifespan(_app):
-        if store is None:
-            validate_configuration("api")
-        yield
+        nonlocal runtime_store
+        if store is not None:
+            yield
+            return
+        validate_configuration("api")
+        with pooled_store(os.environ["DATABASE_URL"], max_size=16) as runtime_store:
+            yield
 
     app = FastAPI(
         title="Negotiation Sandbox", docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan
@@ -128,7 +145,7 @@ def create_app(store=None, *, identity_gateway=None, inbound_gateway=None):
     }
 
     def database():
-        return store if store is not None else Store(os.environ["DATABASE_URL"])
+        return runtime_store if runtime_store is not None else Store(os.environ["DATABASE_URL"])
 
     def creator_member(request, *, write=False):
         auth = request.headers.get("Authorization")
@@ -164,6 +181,15 @@ def create_app(store=None, *, identity_gateway=None, inbound_gateway=None):
     app.add_exception_handler(NotFound, error_status(404))
     app.add_exception_handler(Conflict, error_status(409))
     app.add_exception_handler(Limit, error_status(429))
+
+    @app.exception_handler(PoolTimeout)
+    @app.exception_handler(TooManyRequests)
+    async def database_busy(_request, _error):
+        return JSONResponse(
+            {"detail": "The database is busy. Retry shortly."},
+            status_code=503,
+            headers={"Retry-After": "5"},
+        )
 
     @app.middleware("http")
     async def protect(request: Request, call_next):
@@ -209,7 +235,11 @@ def create_app(store=None, *, identity_gateway=None, inbound_gateway=None):
             return {
                 "threads": db.threads(member.tenant_id),
                 "mode": mode,
-                "capabilities": {"evaluations": False, "simulated_failures": False},
+                "capabilities": {
+                    "evaluations": False,
+                    "simulated_failures": False,
+                    "can_write": member.can_approve,
+                },
                 "workspace_kind": "creator",
             }
         identifier = db.session(request.cookies.get(COOKIE))
@@ -238,6 +268,22 @@ def create_app(store=None, *, identity_gateway=None, inbound_gateway=None):
         sections = [f"{section['title']}\n{section['body']}" for section in document["sections"]]
         return "\n\n".join([document["title"], f"Revision {document['revision']}", *sections])
 
+    @app.get(
+        "/api/negotiations/{thread}/briefs/{document_id}",
+        response_model=BriefRevision,
+        response_model_exclude_unset=True,
+    )
+    def inspect_brief(
+        thread: UUID,
+        document_id: Annotated[str, Path(max_length=80, pattern=IDENTIFIER)],
+        revision: Annotated[int, Query(ge=1, le=2_147_483_647)],
+        request: Request,
+    ):
+        member = creator_member(request)
+        if not member:
+            raise HTTPException(401, "Creator identity is required.")
+        return CampaignBriefs(database()).inspect(member.tenant_id, thread, document_id, revision)
+
     @app.get("/api/profile", response_model=ProfileView)
     def profile(request: Request):
         return database().policy(tenant(request))
@@ -265,14 +311,34 @@ def create_app(store=None, *, identity_gateway=None, inbound_gateway=None):
     @app.get(
         "/api/negotiations/{thread}", response_model=ThreadSnapshot, response_model_exclude_unset=True
     )
-    def read_thread(thread: UUID, request: Request, response: Response):
-        etag, snapshot = database().snapshot_result(
-            tenant(request), thread, request.headers.get("If-None-Match")
+    def read_thread(
+        thread: UUID, request: Request, response: Response, history: Literal["paged"] | None = None
+    ):
+        etag, snapshot = database().reads.snapshot_result(
+            tenant(request), thread, request.headers.get("If-None-Match"), paged=history == "paged"
         )
         if snapshot is None:
             return Response(status_code=304, headers={"ETag": etag})
+        if history is None:
+            # Previously deployed browsers only accept the original draft status enum.
+            for draft in snapshot["drafts"]:
+                if draft["status"] == "DELIVERY_FAILED":
+                    draft["status"] = "REJECTED"
         response.headers["ETag"] = etag
         return snapshot
+
+    @app.get(
+        "/api/negotiations/{thread}/history",
+        response_model=HistoryPage,
+        response_model_exclude_unset=True,
+    )
+    def history(thread: UUID, request: Request, before: Annotated[str, Query(max_length=58)]):
+        workspace = tenant(request)
+        try:
+            cursor = HistoryCursor.parse(before)
+        except ValueError:
+            raise HTTPException(422, "Invalid history cursor.") from None
+        return database().reads.history_page(workspace, thread, cursor)
 
     @app.get("/api/negotiations/{thread}/timeline", response_model=TimelinePage)
     def timeline(thread: UUID, request: Request, before: int | None = None):
@@ -355,7 +421,10 @@ def create_app(store=None, *, identity_gateway=None, inbound_gateway=None):
             raise HTTPException(401, "Mail event could not be authenticated.") from exc
         from starlette.concurrency import run_in_threadpool
 
-        return await run_in_threadpool(MailStore(database()).ingest, payload)
+        try:
+            return await run_in_threadpool(MailStore(database()).ingest, payload)
+        except CreatorMailBackpressure as exc:
+            raise HTTPException(429, str(exc), headers={"Retry-After": "3600"}) from exc
 
     @app.get("/api/operations")
     def operations(request: Request, response: Response):
@@ -364,7 +433,14 @@ def create_app(store=None, *, identity_gateway=None, inbound_gateway=None):
             provided, operational_token.encode()
         ):
             raise HTTPException(403, "Service access is required.")
-        status = operations_status(database(), require_evaluation=capabilities["evaluations"])
+        db = database()
+        status = operations_status(db, require_evaluation=capabilities["evaluations"])
+        if db.pool is not None:
+            stats = db.pool.get_stats()
+            status["api_connection_pool"] = {
+                key: stats.get(key, 0)
+                for key in ("pool_size", "pool_available", "requests_waiting", "requests_errors")
+            }
         if status["status"] != "ok":
             response.status_code = 503
         return status

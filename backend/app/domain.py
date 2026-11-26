@@ -142,8 +142,12 @@ def decide(offer: Offer, policy: Policy) -> Decision:
         questions.append("deliverables")
     elif offer.deliverables.keys() - policy.rates.keys():
         questions.append("deliverables outside the rate card")
-    if offer.currency != policy.currency:
+    quote_currency = None
+    if offer.currency is None:
         questions.append("currency")
+    elif offer.currency != policy.currency:
+        questions.append("budget in quote currency")
+        quote_currency = policy.currency
     if offer.amount is None:
         questions.append("budget")
     if offer.exclusive and not offer.exclusive_days:
@@ -161,6 +165,7 @@ def decide(offer: Offer, policy: Policy) -> Decision:
     if offer.unmapped_obligations:
         return Decision(
             action="clarification",
+            currency=quote_currency,
             questions=["unmapped obligations", *questions],
             checks=["Unmapped obligations require review before quoting."],
             unmapped_obligations=offer.unmapped_obligations,
@@ -168,6 +173,7 @@ def decide(offer: Offer, policy: Policy) -> Decision:
     if offer.deadline_days is not None and offer.deadline_days < policy.lead_days:
         return Decision(
             action="clarification",
+            currency=quote_currency,
             questions=questions + ["deadline flexibility"],
             checks=["Requested deadline conflicts with creator availability."],
         )
@@ -178,6 +184,7 @@ def decide(offer: Offer, policy: Policy) -> Decision:
     ):
         return Decision(
             action="clarification",
+            currency=quote_currency,
             questions=questions,
             checks=["Confirm required terms."],
             advertising=bool(offer.advertising),

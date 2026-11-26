@@ -29,9 +29,18 @@ def daily_model_budget(env):
     return budget
 
 
+def creator_daily_mail_limit(env):
+    raw = env.get("CREATOR_DAILY_MAIL_LIMIT", "1000")
+    if not raw.isascii() or not raw.isdecimal() or len(raw) > 7 or not 0 < int(raw) <= 1_000_000:
+        raise ConfigurationError("Set CREATOR_DAILY_MAIL_LIMIT to an integer from 1 to 1000000.")
+    return int(raw)
+
+
 def validate_configuration(role, env=None):
     values = os.environ if env is None else env
     validate_database_url(values.get("DATABASE_URL"))
+    if role == "api" and values.get("REAL_MAIL_ENABLED") == "1":
+        creator_daily_mail_limit(values)
     app_env = values.get("APP_ENV", "local")
     mode = values.get("MODEL_MODE", "scripted")
     if app_env not in {"local", "production"}:

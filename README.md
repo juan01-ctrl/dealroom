@@ -86,11 +86,15 @@ To regenerate the evaluation artifact from `backend/`, migrate the chosen databa
 uv run --locked python -m app.evaluations --output ../docs/evaluation-results.json
 ```
 
-The dashboard shows observed outcomes and fixture version. Suite v3 contains 28 cases and reports linked-evidence recall and precision, sender evidence, negotiation moves, and average reply length. Scripted scores measure workflow behavior. Latency varies by machine, and live model quality and estimated cost vary by provider. See [the recorded run](docs/evaluation-results.json), [the held-out live review guide](docs/live-negotiation-review.md), and [the walkthrough](docs/dealroom-walkthrough.mp4).
+The dashboard shows observed outcomes and fixture version. Suite v4 contains 33 cases and reports linked-evidence recall and precision, sender evidence, negotiation moves, and average reply length. Scripted scores measure workflow behavior. Latency varies by machine, and live model quality and estimated cost vary by provider. See [the recorded run](docs/evaluation-results.json), [the held-out live review guide](docs/live-negotiation-review.md), and [the walkthrough](docs/dealroom-walkthrough.mp4).
+
+## Langfuse observability
+
+Set `ENABLE_LANGFUSE=1` and the Langfuse project keys on the worker to export job, model, and evaluation observations. The inspector shows the trace ID under **Turn evidence**. CI runs the synthetic evals and tracing tests without external credentials. Follow the [Langfuse configuration and verification guide](docs/langfuse.md).
 
 ## Deploy
 
-Follow the [operations runbook](docs/operations.md) for the Railway API, separate negotiation and evaluation workers, and Vercel frontend. The runbook covers credentials, migration, health checks, backups, rollout and rollback. Run the isolated local release drill with `bash scripts/release-smoke.sh`.
+Follow the [operations runbook](docs/operations.md) for the Railway API, separate analysis, delivery, and evaluation workers, and Vercel frontend. The runbook covers credentials, migration, health checks, backups, rollout and rollback. Run the isolated local release drill with `bash scripts/release-smoke.sh`. See the [production mail implementation plan](docs/superpowers/plans/2026-11-25-production-mail-readiness.md) for capacity assumptions and launch gates.
 
 The default workspace uses simulated mail. The [real-mail integration guide](docs/real-mail-integration.md) specifies the opt-in identity gateway and mail relay, including workspace membership, authenticated inbound events, sender and recipient binding, and receipt reconciliation. Verify the chosen gateway, provider account, workspace access, and data retention policy in staging before onboarding creators.
 

@@ -1,26 +1,29 @@
 """Verified inbound events, approval-bound envelopes, and durable provider handoff."""
 
 import argparse
-import hashlib
-import json
 import os
 import re
-from dataclasses import asdict, dataclass
 from time import time
-from typing import Literal, Protocol
-from urllib.parse import urlsplit
-from urllib.request import HTTPRedirectHandler, Request, build_opener
 from uuid import UUID
 
 from pydantic import Field, ValidationError, field_validator
 
 from . import storage
-from .configuration import ConfigurationError
+from .configuration import ConfigurationError, creator_daily_mail_limit
 from .domain import Input
 from .identity import active_approver, integration_secret, mailbox, valid_hmac
+from .observability import observe
+from .relay_transport import (
+    MAIL_PROVIDER_PATTERN,
+    Envelope,
+    MailProvider,
+    ProviderResult,
+    configured_mail_provider,
+    payload_fingerprint,
+)
+from .relay_transport import RelayProvider as RelayProvider  # noqa: PLC0414
 
 MAX_INBOUND_BYTES = 16_384
-_PROVIDER = r"[a-z][a-z0-9_-]{0,39}"
 
 
 class MailAuthenticationError(ValueError):
@@ -32,7 +35,7 @@ class MailDeliveryPending(RuntimeError):
 
 
 class InboundMail(Input):
-    provider: str = Field(pattern=rf"^{_PROVIDER}$")
+    provider: str = Field(pattern=rf"^{MAIL_PROVIDER_PATTERN}$")
     event_id: str = Field(min_length=1, max_length=256, pattern=r"^[!-~]+$")
     to: str
     from_address: str
@@ -70,7 +73,7 @@ class InboundMail(Input):
 class InboundGateway:
     def __init__(self, secret: str, provider: str, *, clock=time):
         self.secret = integration_secret(secret, "MAIL_INBOUND_SECRET")
-        if not re.fullmatch(_PROVIDER, provider):
+        if not re.fullmatch(MAIL_PROVIDER_PATTERN, provider):
             raise ConfigurationError("Set MAIL_PROVIDER to a lowercase provider identifier.")
         self.provider = provider
         self.clock = clock
@@ -97,133 +100,6 @@ class InboundGateway:
         return payload
 
 
-def _fingerprint(value):
-    encoded = json.dumps(value, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode(
-        "utf-8"
-    )
-    return hashlib.sha256(encoded).hexdigest()
-
-
-@dataclass(frozen=True)
-class Envelope:
-    provider: str
-    sender: str
-    recipient: str
-    subject: str
-    body: str
-
-    @property
-    def digest(self):
-        return _fingerprint(asdict(self))
-
-    def review_fields(self):
-        return {
-            "sender": self.sender,
-            "recipient": self.recipient,
-            "subject": self.subject,
-            "digest": self.digest,
-        }
-
-
-@dataclass(frozen=True)
-class ProviderResult:
-    state: Literal["accepted", "rejected", "unknown"]
-    receipt_id: str | None = None
-
-    def __post_init__(self):
-        if self.state not in {"accepted", "rejected", "unknown"}:
-            raise ValueError("Invalid provider outcome.")
-        if self.state == "accepted":
-            if not isinstance(self.receipt_id, str) or not re.fullmatch(
-                r"[!-~]{1,256}", self.receipt_id
-            ):
-                raise ValueError("An accepted result requires a provider receipt identifier.")
-        elif self.receipt_id is not None:
-            raise ValueError("A provider receipt requires acceptance.")
-
-
-class MailProvider(Protocol):
-    name: str
-
-    def send(self, key: UUID, envelope: Envelope) -> ProviderResult: ...
-
-    def lookup(self, key: UUID) -> ProviderResult: ...
-
-
-class _NoRedirect(HTTPRedirectHandler):
-    def redirect_request(self, *args, **kwargs):
-        return None
-
-
-class RelayProvider:
-    """HTTPS adapter for a trusted relay that implements the delivery contract."""
-
-    def __init__(self, name: str, base_url: str, token: str):
-        if not re.fullmatch(_PROVIDER, name):
-            raise ConfigurationError("Set MAIL_PROVIDER to a lowercase provider identifier.")
-        try:
-            endpoint = urlsplit(base_url)
-            valid = (
-                endpoint.scheme == "https"
-                and endpoint.hostname
-                and not endpoint.username
-                and endpoint.password is None
-                and not endpoint.query
-                and not endpoint.fragment
-                and (endpoint.port is None or 0 < endpoint.port < 65536)
-                and base_url.isascii()
-                and not any(char.isspace() for char in base_url)
-            )
-        except ValueError:
-            valid = False
-        if not valid:
-            raise ConfigurationError("Set MAIL_RELAY_URL to an HTTPS endpoint.")
-        if not re.fullmatch(r"[!-~]{32,512}", token):
-            raise ConfigurationError("Set MAIL_RELAY_TOKEN to a printable ASCII bearer token.")
-        self.name = name
-        self.base_url = base_url.rstrip("/")
-        self.token = token
-        self.opener = build_opener(_NoRedirect)
-
-    def send(self, key, envelope):
-        return self._request(
-            "POST",
-            "/deliveries",
-            key,
-            {
-                "idempotency_key": str(key),
-                "from": envelope.sender,
-                "to": envelope.recipient,
-                "subject": envelope.subject,
-                "text": envelope.body,
-            },
-        )
-
-    def lookup(self, key):
-        return self._request("GET", f"/deliveries/{key}", key)
-
-    def _request(self, method, path, key, payload=None):
-        headers = {
-            "Accept": "application/json",
-            "Authorization": f"Bearer {self.token}",
-            "Idempotency-Key": str(key),
-        }
-        data = None
-        if payload is not None:
-            headers["Content-Type"] = "application/json"
-            data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-        request = Request(self.base_url + path, data=data, headers=headers, method=method)
-        try:
-            with self.opener.open(request, timeout=5) as response:
-                raw = response.read(4097)
-            result = json.loads(raw) if len(raw) <= 4096 else None
-            if not isinstance(result, dict) or result.get("idempotency_key") != str(key):
-                return ProviderResult("unknown")
-            return ProviderResult(result.get("state"), result.get("receipt_id"))
-        except (OSError, TypeError, ValueError):
-            return ProviderResult("unknown")
-
-
 def configured_inbound_gateway(env=None):
     values = os.environ if env is None else env
     if values.get("REAL_MAIL_ENABLED") != "1":
@@ -231,15 +107,8 @@ def configured_inbound_gateway(env=None):
     return InboundGateway(values.get("MAIL_INBOUND_SECRET", ""), values.get("MAIL_PROVIDER", ""))
 
 
-def configured_mail_provider(env=None):
-    values = os.environ if env is None else env
-    if values.get("REAL_MAIL_ENABLED") != "1":
-        return None
-    return RelayProvider(
-        values.get("MAIL_PROVIDER", ""),
-        values.get("MAIL_RELAY_URL", ""),
-        values.get("MAIL_RELAY_TOKEN", ""),
-    )
+class CreatorMailBackpressure(storage.Limit):
+    """Verified ingress may be retried after a temporary workspace limit."""
 
 
 def draft_envelope(db, tenant, thread, analysis_id, body):
@@ -318,7 +187,7 @@ class MailStore:
 
     def configure_route(self, tenant, thread, *, provider, inbound_address, sender, recipient):
         """Operator-only routing for a verified send mailbox and an authorized counterpart."""
-        if not re.fullmatch(_PROVIDER, provider):
+        if not re.fullmatch(MAIL_PROVIDER_PATTERN, provider):
             raise ValueError("Use a lowercase provider identifier.")
         addresses = tuple(map(mailbox, (inbound_address, sender, recipient)))
         with self.store.connect() as db:
@@ -338,9 +207,10 @@ class MailStore:
             if changed:
                 storage.event(db, tenant, thread, current["revision"], "mail_route_changed")
 
-    def ingest(self, payload: InboundMail, *, quota=80):
-        payload_digest = _fingerprint(payload.model_dump())
-        stable_id = "mail:" + _fingerprint([payload.provider, payload.event_id])
+    def ingest(self, payload: InboundMail, *, quota=None):
+        quota = creator_daily_mail_limit(os.environ) if quota is None else quota
+        payload_digest = payload_fingerprint(payload.model_dump())
+        stable_id = "mail:" + payload_fingerprint([payload.provider, payload.event_id])
         with self.store.connect() as db:
             db.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s,0))", (stable_id,))
             existing = db.execute(
@@ -372,7 +242,18 @@ class MailStore:
             if not still_matches:
                 raise storage.NotFound("The inbound mail route was not found.")
             body = f"From: {payload.from_address}\nSubject: {payload.subject}\n\n{payload.body}"
-            result = self.store.ingest(tenant, thread, stable_id, body, quota=quota, db=db)
+            # The counter and new event commit together; exact retries return before charging admission.
+            booked = db.execute(
+                """INSERT INTO creator_mail_daily_usage(tenant_id,usage_date,messages)
+                   VALUES (%s,(now() AT TIME ZONE 'UTC')::date,1)
+                   ON CONFLICT (tenant_id,usage_date) DO UPDATE
+                   SET messages=creator_mail_daily_usage.messages+1
+                   WHERE creator_mail_daily_usage.messages<%s RETURNING messages""",
+                (tenant, quota),
+            ).fetchone()
+            if booked is None:
+                raise CreatorMailBackpressure("This workspace reached its daily inbound mail limit.")
+            result = self.store.ingest(tenant, thread, stable_id, body, quota=None, db=db)
             db.execute(
                 """INSERT INTO mail_inbound_events(provider,provider_event_id,payload_digest,tenant_id,
                           event_id,inbound_address,sender,subject) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)""",
@@ -410,6 +291,7 @@ class MailStore:
                 approval = self._approval(db, tenant, thread, approval_id)
                 if not approval or approval["attempt_state"] in {"REJECTED", "BLOCKED", "ACCEPTED"}:
                     return None, False
+                envelope = None
                 first_attempt = approval["attempt_state"] is None
                 if first_attempt:
                     if not dispatch:
@@ -418,7 +300,8 @@ class MailStore:
                     approval = self._approval(db, tenant, thread, approval_id)
                     if not approval:
                         return None, False
-                    if self._valid_envelope(db, tenant, thread, approval, policy, current) is None:
+                    envelope = self._valid_envelope(db, tenant, thread, approval, policy, current)
+                    if envelope is None:
                         self._block(db, tenant, thread, approval_id, approval, policy, current)
                         return None, False
                 if not provider or provider.name != approval["provider"]:
@@ -437,22 +320,16 @@ class MailStore:
                         approval_id=str(approval_id),
                     )
 
-            # The intent survives a crash or an ambiguous result. Future callers only look up this key.
-            if not first_attempt:
-                outcome = self._provider_outcome(provider.lookup, approval_id)
-                with db.transaction():
-                    return self._finalize(db, tenant, thread, approval_id, outcome), False
-
+            # Committing the validated attempt authorizes the exact envelope. The per-approval
+            # advisory lock stays held, while policy and negotiation row locks are released.
+            # Existing attempts, including those written by an older worker, only use lookup.
+            with observe("mail.send" if envelope is not None else "mail.reconcile") as span:
+                if envelope is not None:
+                    outcome = self._provider_outcome(provider.send, approval_id, envelope)
+                else:
+                    outcome = self._provider_outcome(provider.lookup, approval_id)
+                span.update(output={"state": outcome.state})
             with db.transaction():
-                policy, current = self._lock_thread(db, tenant, thread)
-                approval = self._approval(db, tenant, thread, approval_id)
-                if not approval:
-                    return None, False
-                envelope = self._valid_envelope(db, tenant, thread, approval, policy, current)
-                if envelope is None:
-                    self._block(db, tenant, thread, approval_id, approval, policy, current)
-                    return None, False
-                outcome = self._provider_outcome(provider.send, approval_id, envelope)
                 return self._finalize(db, tenant, thread, approval_id, outcome), False
 
     def _lock_thread(self, db, tenant, thread):

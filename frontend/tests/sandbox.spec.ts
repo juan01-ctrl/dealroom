@@ -42,7 +42,8 @@ test("creator approves the reviewed version and negotiation survives a reload", 
 test("dashboard runs and expands real evaluation results", async ({ page }) => {
   await page.goto("/evaluations");
   await page.getByRole("button", { name: "Run evaluation suite" }).click();
-  await expect(page.getByRole("region", { name: "Scenario results" }).locator("details")).toHaveCount(28);
+  await expect(page.getByRole("region", { name: "Scenario results" }).locator("details"))
+    .toHaveCount(33, { timeout: 20_000 });
   await expect(page.getByText("Failed", { exact: true })).toHaveCount(0);
   const recovery = page.locator("details.scenario").filter({ hasText: "Failure after simulated delivery" });
   await recovery.locator("summary").click();

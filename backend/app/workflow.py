@@ -1,13 +1,17 @@
 import logging
 import os
 import time
+from contextlib import nullcontext
+from functools import partial
 from typing import TypedDict
 
 from langgraph.graph import END, START, StateGraph
 from langsmith import trace, tracing_context
 
+from .campaign_briefs import CampaignBriefs
 from .domain import Decision, Offer, Policy, Proposal, decide, merge
 from .negotiation import select_negotiation_move
+from .observability import observe
 from .operations import execution_identity
 from .retrieval import collect_evidence, links
 from .sender import current_body
@@ -40,7 +44,7 @@ def email_bodies(state: State):
     return [*(item["body"] for item in state["unprocessed"]), state["email"]]
 
 
-def build_graph(model, saver, inputs=None):
+def build_graph(model, saver, inputs=None, *, brief_reader=nullcontext):
     def source(state):
         return state if inputs is None else inputs
 
@@ -53,7 +57,19 @@ def build_graph(model, saver, inputs=None):
 
     def retrieve(state: State):
         start = time.perf_counter()
-        evidence = [collect_evidence(current_body(email)) for email in email_bodies(source(state))]
+        with observe("briefs.retrieve", as_type="retriever") as span:
+            with brief_reader() as lookup:
+                evidence = [
+                    collect_evidence(current_body(email), lookup)
+                    for email in email_bodies(source(state))
+                ]
+            span.update(
+                output={
+                    "documents": sum(len(item["sources"]) for item in evidence),
+                    "denied_links": sum(item["denied_links"] for item in evidence),
+                    "conflicting_fields": sum(len(item["conflicting_fields"]) for item in evidence),
+                }
+            )
         return {"retrieval": evidence, "retrieval_ms": round((time.perf_counter() - start) * 1000)}
 
     def extract(state: State):
@@ -62,7 +78,18 @@ def build_graph(model, saver, inputs=None):
         evidence = state.get("retrieval", [])
         if evidence and evidence[-1]["terms"]:
             terms = merge(terms, Offer.model_validate(evidence[-1]["terms"]))
-        patch, usage = model.extract(current["email"], terms.model_dump())
+        live = model.mode == "live"
+        generation = {"model": os.getenv("MODEL_NAME")} if live else {}
+        with observe("terms.extract", as_type="generation" if live else "chain", **generation) as span:
+            patch, usage = model.extract(current["email"], terms.model_dump())
+            if live and usage:
+                span.update(
+                    usage_details={
+                        field: usage[key]
+                        for key, field in (("input_tokens", "input"), ("output_tokens", "output"))
+                        if key in usage
+                    }
+                )
         return {
             "terms": merge(terms, patch).model_dump(),
             "usage": add_usage({}, usage),
@@ -71,19 +98,28 @@ def build_graph(model, saver, inputs=None):
 
     def negotiate(decision: Decision, state: State):
         prior = source(state).get("last_quote") or {}
-        return Decision.model_validate(
-            select_negotiation_move.invoke(
-                {
-                    "decision": decision,
-                    "offer": Offer.model_validate(state["terms"]),
-                    "current_email": source(state)["email"],
-                    "previous_decision": prior.get("decision"),
-                    "previous_offer": prior.get("terms"),
-                }
+        with observe("negotiation.select_move", as_type="tool"):
+            return Decision.model_validate(
+                select_negotiation_move.invoke(
+                    {
+                        "decision": decision,
+                        "offer": Offer.model_validate(state["terms"]),
+                        "current_email": source(state)["email"],
+                        "previous_decision": prior.get("decision"),
+                        "previous_offer": prior.get("terms"),
+                    }
+                )
             )
-        )
 
     def price(state: State):
+        with observe("policy.evaluate", as_type="guardrail") as span:
+            result = evaluate_policy(state)
+            span.update(
+                output={"action": result["decision"]["action"], "move": result["decision"].get("move")}
+            )
+            return result
+
+    def evaluate_policy(state: State):
         decision = decide(
             Offer.model_validate(state["terms"]), Policy.model_validate(source(state)["policy"])
         )
@@ -104,6 +140,10 @@ def build_graph(model, saver, inputs=None):
         return {"decision": negotiate(decision, state).model_dump()}
 
     def compose(state: State):
+        with observe("reply.compose", as_type="chain"):
+            return compose_proposal(state)
+
+    def compose_proposal(state: State):
         decision = Decision.model_validate(state["decision"])
         if not decision.move:
             decision = negotiate(decision, state)
@@ -148,9 +188,19 @@ def telemetry(result, model):
             8,
         )
     evidence = result.get("retrieval", [])
-    sources = {source["document_id"]: source for item in evidence for source in item["sources"]}
+    sources = {
+        (source["document_id"], source["revision"]): source
+        for item in evidence
+        for source in item["sources"]
+    }
+    current_evidence = evidence[-1] if evidence else {}
     retrieval = {
         "sources": list(sources.values()),
+        "field_sources": {
+            field: locations
+            for field, locations in current_evidence.get("field_sources", {}).items()
+            if result["terms"].get(field) == current_evidence["terms"][field]
+        },
         "latency_ms": result.get("retrieval_ms", 0),
         "denied_links": sum(item["denied_links"] for item in evidence),
         "attempted_links": sum(item["attempted_links"] for item in evidence),
@@ -180,13 +230,14 @@ def telemetry(result, model):
     }
 
 
-def run_analysis(store, saver, job, model):
+def run_analysis(store, saver, job, model, *, trace_id=None):
     inputs = store.analysis_input(job)
     if inputs is None:
         return
     if inputs["unprocessed"]:
         raise PredecessorRecoveryRequired("Resolve earlier turns before retrying this one.")
-    graph = build_graph(model, saver, inputs)
+    brief_reader = partial(CampaignBriefs(store).reader, job["tenant_id"], job["thread_id"])
+    graph = build_graph(model, saver, inputs, brief_reader=brief_reader)
     config = {"configurable": {"thread_id": str(job["id"])}}
     snapshot = graph.get_state(config)
     identifiers = {"negotiation_id": str(job["thread_id"]), "turn_id": str(job["id"])}
@@ -205,6 +256,8 @@ def run_analysis(store, saver, job, model):
                 state = graph.invoke(None, config, durability="sync")
         metadata = telemetry(state, model)
         metadata["execution"] = job["payload"].get("execution") or execution_identity(model.mode)
+        if trace_id:
+            metadata["langfuse_trace_id"] = trace_id
         if job["payload"].get("queued_build"):
             metadata["queued_build"] = job["payload"]["queued_build"]
         store.publish(
@@ -228,7 +281,9 @@ def run_analysis(store, saver, job, model):
             "negotiation_move": metadata["negotiation_move"],
             "sender_evidence": metadata["sender_evidence"],
             "retrieval": {
-                key: value for key, value in metadata["retrieval"].items() if key != "sources"
+                key: value
+                for key, value in metadata["retrieval"].items()
+                if key not in {"sources", "field_sources"}
             },
         },
     )

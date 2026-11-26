@@ -1,0 +1,40 @@
+[
+  {
+    "id": 29,
+    "name": "Confirm a public price equal to the private floor with zero-fee exclusivity",
+    "policy": {"exclusivity_pct": 0, "minimum_reel": 240000, "rates": {"reel": 240000}},
+    "email": "USD 2,400 for one reel within 14 days with 30 days of category exclusivity.",
+    "expected": {"action": "acceptance", "total": 240000, "surcharge": 0, "reply_includes": ["USD 2,400.00", "30 days of exclusivity", "within 14 days"]}
+  },
+  {
+    "id": 30,
+    "name": "A higher budget does not waive unsupported rights",
+    "email": "USD 2,400 for one reel, plus whitelisting and raw footage.",
+    "followup": "We can go up to USD 3,000.",
+    "operation": "unapproved_followup",
+    "expected": {"action": "clarification", "total": null, "reply_includes": ["whitelisting", "raw assets"], "reply_excludes": ["USD"], "deliveries": 0}
+  },
+  {
+    "id": 31,
+    "name": "An explicit rights withdrawal allows a fresh decision",
+    "email": "USD 2,400 for one reel, plus whitelisting and raw footage.",
+    "followup": "No whitelisting or raw footage is needed.",
+    "operation": "unapproved_followup",
+    "expected": {"action": "acceptance", "total": 240000, "reply_excludes": ["whitelisting", "raw assets"], "deliveries": 0}
+  },
+  {
+    "id": 32,
+    "name": "An unsent quote does not set the next anchor",
+    "email": "Northstar offers USD 2,800 for one reel. We need 30 days of paid social ads. Paid usage is outside that budget.",
+    "followup": "Can you work with USD 2,300 instead?",
+    "operation": "unapproved_followup",
+    "expected": {"action": "counteroffer", "negotiation_move": "open_quote", "total": 230000, "reply_excludes": ["USD 2,800.00"], "deliveries": 0}
+  },
+  {
+    "id": 33,
+    "name": "Ask for a USD budget from a EUR sender with an unverified quoted signature",
+    "email": "From: Jordan Lee <partnerships@northstar.example>\nSubject: Reel campaign\n\nWe offer EUR 2,400 for one reel.\n\n> Best,\n> Jordan Lee",
+    "expected": {"action": "clarification", "total": null, "question": "budget in quote currency", "sender_evidence": "unverified", "greeting": "Hi,", "reply_includes": ["Could you share the budget in USD?"], "reply_excludes": ["Hi Jordan", "Which currency is the budget in?", "2,400"]},
+    "extraction": {"currency": "EUR", "amount": 240000}
+  }
+]

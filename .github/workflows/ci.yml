@@ -2,6 +2,12 @@ name: Verify sandbox
 on:
   push:
   pull_request:
+  workflow_dispatch:
+    inputs:
+      prior_sha:
+        description: Full commit SHA of the previous approved backend release
+        required: true
+        type: string
 permissions:
   contents: read
 jobs:
@@ -42,6 +48,21 @@ jobs:
         working-directory: backend
       - run: uv run --locked pytest -q
         working-directory: backend
+      - name: Run the scripted negotiation release gate
+        id: scripted-gate
+        run: |
+          uv run --locked python -m app.migrate
+          uv run --locked python -m app.evaluations --output "$RUNNER_TEMP/scripted-evaluations.json"
+          python -c 'import json, sys; assert json.load(sys.stdin)["release_gate"]["passed"] is True' \
+            < "$RUNNER_TEMP/scripted-evaluations.json"
+        working-directory: backend
+      - name: Publish the scripted result for this SHA
+        if: ${{ !cancelled() && steps.scripted-gate.outcome != 'skipped' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: scripted-evaluations-${{ github.sha }}
+          path: ${{ runner.temp }}/scripted-evaluations.json
+          if-no-files-found: error
       - run: |
           uv run --locked python -m app.migrate
           nohup uv run --locked uvicorn app.api:app --port 8000 > /tmp/sandbox-api.log 2>&1 &
@@ -100,3 +121,41 @@ jobs:
           persist-credentials: false
       - name: Exercise container startup, schema upgrade, worker recovery and restore
         run: bash scripts/release-smoke.sh
+
+  qualify-candidate:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      PRIOR_SHA: ${{ inputs.prior_sha }}
+      RELEASE_EVIDENCE_DIR: ${{ runner.temp }}/release-evidence
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Build the prior backend from its recorded revision
+        run: |
+          [[ "$PRIOR_SHA" =~ ^[0-9a-f]{40}$ && "$PRIOR_SHA" != "$GITHUB_SHA" ]]
+          git cat-file -e "$PRIOR_SHA^{commit}"
+          mkdir -p "$RELEASE_EVIDENCE_DIR" "$RUNNER_TEMP/prior-source"
+          git archive "$PRIOR_SHA" backend frontend/package-lock.json | tar -x -C "$RUNNER_TEMP/prior-source"
+          git show "$PRIOR_SHA:docs/evaluation-results.json" > "$RELEASE_EVIDENCE_DIR/prior-reference-report.json"
+          printf '%s\n' "$PRIOR_SHA" > "$RELEASE_EVIDENCE_DIR/prior-sha.txt"
+          (cd "$RUNNER_TEMP/prior-source" && shasum -a 256 backend/uv.lock frontend/package-lock.json \
+            backend/evals/fixtures/*.json backend/migrations/*.sql) > "$RELEASE_EVIDENCE_DIR/prior-input-sha256.txt"
+          docker build --tag "dealroom-prior:$PRIOR_SHA" "$RUNNER_TEMP/prior-source/backend"
+      - name: Qualify the candidate with mixed workers, recovery and database workload
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test -z "$(git status --porcelain)"
+          BASELINE_IMAGE="dealroom-prior:$PRIOR_SHA" bash scripts/release-smoke.sh \
+            2>&1 | tee "$RELEASE_EVIDENCE_DIR/release-smoke.log"
+        shell: bash
+      - name: Publish candidate evidence for this SHA
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-evidence-${{ github.sha }}
+          path: ${{ runner.temp }}/release-evidence/
+          if-no-files-found: error

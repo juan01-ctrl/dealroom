@@ -87,6 +87,17 @@ def test_optional_followup_does_not_remove_blocking_question_or_add_filler():
     assert "?" in reply and "Happy to discuss" not in reply
 
 
+def test_known_foreign_currency_requests_a_budget_in_the_quote_currency():
+    offer = Offer(deliverables={"reel": 1}, amount=240000, currency="EUR")
+    decision = plan_reply(decide(offer, Policy()), offer, identify_sender("Hello"))
+    reply = render_reply(decision, Proposal())
+    assert decision.action == "clarification"
+    assert decision.questions == ["budget in quote currency"]
+    assert decision.total is None
+    assert "I quote in USD. Could you share the budget in USD?" in reply
+    assert "2,400" not in reply
+
+
 def test_conditional_scope_trade_avoids_unilateral_discount():
     offer = Offer(
         deliverables={"reel": 1},

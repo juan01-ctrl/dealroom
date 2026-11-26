@@ -14,7 +14,7 @@ async function workspace(context: BrowserContext, mode = "scripted", evaluations
   await context.route("**/api/profile", (route) => route.fulfill({
     json: { version: 1, data: policy, suggested_tone: null },
   }));
-  await context.route("**/api/negotiations/first", (route) => route.fulfill({ json: { ...thread, ...empty } }));
+  await context.route(/\/api\/negotiations\/first\?history=paged$/, (route) => route.fulfill({ json: { ...thread, ...empty } }));
 }
 
 test("two tabs keep the policy version attached to the edited form", async ({ context, page }) => {
@@ -36,7 +36,7 @@ test("two tabs keep the policy version attached to the edited form", async ({ co
     }
   });
   let delivered = false;
-  await page.route("**/api/negotiations/first", (route) => route.fulfill({
+  await page.route(/\/api\/negotiations\/first\?history=paged$/, (route) => route.fulfill({
     json: { ...thread, ...empty, deliveries: delivered ? [{ body: "Delivered", created_at: "2026-11-25T12:00:00Z", delivery_key: "1" }] : [] },
   }));
   const other = await context.newPage();
@@ -73,7 +73,7 @@ test("opens a committed creation when a subsequent read fails", async ({ context
       await route.fulfill({ json: { id: "created" } });
     }
   });
-  await page.route("**/api/negotiations/created", (route) => route.fulfill({ status: 503, json: { detail: "Refresh failed." } }));
+  await page.route(/\/api\/negotiations\/created\?history=paged$/, (route) => route.fulfill({ status: 503, json: { detail: "Refresh failed." } }));
   await page.goto("/");
   await page.getByRole("button", { name: "New", exact: true }).click();
   await page.getByLabel("Negotiation name").fill("Summer campaign");
@@ -112,7 +112,7 @@ test("displays available evaluation actions from session capabilities", async ({
 
 test("gates simulated fault injection and exposes predecessor recovery", async ({ context, page }) => {
   await workspace(context, "live", false);
-  await page.route("**/api/negotiations/first", (route) => route.fulfill({ json: {
+  await page.route(/\/api\/negotiations\/first\?history=paged$/, (route) => route.fulfill({ json: {
     ...thread, ...empty, status: "FAILED", revision: 2, recoverable_turns: [{ job_id: "older-job", revision: 1 }],
   } }));
   await page.route("**/api/negotiations/first/recovery", (route) => route.fulfill({ json: { status: "ok" } }));
@@ -127,7 +127,7 @@ test("gates simulated fault injection and exposes predecessor recovery", async (
 test("polling revalidates with the server ETag and pauses while hidden", async ({ context, page }) => {
   await workspace(context);
   const tags: (string | undefined)[] = [];
-  await page.route("**/api/negotiations/first", async (route) => {
+  await page.route(/\/api\/negotiations\/first\?history=paged$/, async (route) => {
     const tag = route.request().headers()["if-none-match"];
     tags.push(tag);
     if (tag === '"initial"') await route.fulfill({ status: 304, headers: { etag: tag } });
@@ -151,7 +151,7 @@ test("polling revalidates with the server ETag and pauses while hidden", async (
 
 test("rejects a malformed success response without losing the workspace", async ({ context, page }) => {
   await workspace(context);
-  await page.route("**/api/negotiations/first", (route) => route.fulfill({
+  await page.route(/\/api\/negotiations\/first\?history=paged$/, (route) => route.fulfill({
     json: { ...thread, ...empty, messages: null },
   }));
   await page.goto("/");
@@ -178,7 +178,7 @@ test("keeps a draft through expiry and reconnects to an accessible thread", asyn
     expired = false;
     return route.fulfill({ json: { mode: "scripted", threads: [thread] } });
   });
-  await page.route("**/api/negotiations/first", (route) => expired
+  await page.route(/\/api\/negotiations\/first\?history=paged$/, (route) => expired
     ? route.fulfill({ status: 401, json: { detail: "Start a new sandbox session." } })
     : route.fulfill({ json: { ...thread, ...empty } }));
   await page.goto("/");
@@ -200,7 +200,7 @@ test("retries an ambiguous thread creation with the original event ID", async ({
     return events.length === 1 ? route.fulfill({ status: 502, json: { detail: "Write status unknown." } })
       : route.fulfill({ json: { id: "created" } });
   });
-  await page.route("**/api/negotiations/created", (route) => route.fulfill({ json: { ...thread, ...empty, id: "created" } }));
+  await page.route(/\/api\/negotiations\/created\?history=paged$/, (route) => route.fulfill({ json: { ...thread, ...empty, id: "created" } }));
   await page.goto("/");
   await page.getByRole("button", { name: "New", exact: true }).click();
   await page.getByLabel("Negotiation name").fill("Retry this campaign");
@@ -216,7 +216,7 @@ test("keeps older and current events together after loading timeline history", a
   await workspace(context);
   const date = "2026-11-25T12:00:00Z";
   const event = (id: number, kind: string) => ({ id, kind, revision: 1, details: {}, created_at: date });
-  await page.route("**/api/negotiations/first", (route) => route.fulfill({ json: {
+  await page.route(/\/api\/negotiations\/first\?history=paged$/, (route) => route.fulfill({ json: {
     ...thread, ...empty, timeline_has_more: true, timeline: [event(4, "draft_created"), event(5, "draft_approved")],
   } }));
   await page.route("**/api/negotiations/first/timeline?before=4", (route) => route.fulfill({
@@ -232,7 +232,7 @@ test("keeps older and current events together after loading timeline history", a
 
 test("approval includes the visible mail envelope digest when supplied", async ({ context, page }) => {
   await workspace(context);
-  await page.route("**/api/negotiations/first", (route) => route.fulfill({ json: {
+  await page.route(/\/api\/negotiations\/first\?history=paged$/, (route) => route.fulfill({ json: {
     ...thread, ...empty, status: "AWAITING_APPROVAL", revision: 1, drafts: [{
       id: "draft-one", version: 2, revision: 1, policy_version: 1, status: "PENDING",
       body: "Thanks for sending your offer.", created_at: "2026-11-25T12:00:00Z",
@@ -258,7 +258,7 @@ test("verified creator workspaces hide synthetic inbound and fault controls", as
   await workspace(context, "live", false);
   await context.route("**/api/session", (route) => route.fulfill({ json: {
     mode: "live", workspace_kind: "creator", threads: [thread],
-    capabilities: { evaluations: false, simulated_failures: false },
+    capabilities: { evaluations: false, simulated_failures: false, can_write: true },
   } }));
   await page.goto("/");
   const negotiation = page.getByRole("region", { name: "Negotiation thread" });
@@ -270,4 +270,35 @@ test("verified creator workspaces hide synthetic inbound and fault controls", as
   await expect(negotiation.getByText("Waiting for a brand email")).toBeVisible();
   await negotiation.getByRole("button", { name: "Recovery controls" }).click();
   await expect(negotiation.getByRole("button", { name: "Fail after checkpoint" })).toHaveCount(0);
+});
+
+test("verified creator viewers can inspect and page without write controls", async ({ context, page }) => {
+  await workspace(context, "live", false);
+  await context.route("**/api/session", (route) => route.fulfill({ json: {
+    mode: "live", workspace_kind: "creator", threads: [thread],
+    capabilities: { evaluations: false, simulated_failures: false, can_write: false },
+  } }));
+  const created_at = "2026-11-25T12:00:00Z";
+  await page.route(/\/api\/negotiations\/first\?history=paged$/, (route) => route.fulfill({ json: {
+    ...thread, ...empty, status: "AWAITING_APPROVAL", revision: 2, history_cursor: "older",
+    recoverable_turns: [{ job_id: "failed-job", revision: 1 }],
+    drafts: [{
+      id: "draft", revision: 2, version: 1, status: "PENDING", policy_version: 1, created_at,
+      body: "Reply awaiting review",
+      decision: { action: "clarification", total: null, base: null, surcharge: null, currency: null,
+        questions: [], checks: [], items: {}, advertising: false },
+      proposal: { tone: "warm", invite_followup: true },
+      mail: { sender: "creator@example.test", recipient: "brand@example.test", subject: "Re: Offer", digest: "visible-digest" },
+    }],
+  } }));
+  await page.route("**/api/negotiations/first/history?before=older", (route) => route.fulfill({ json: {
+    messages: [{ revision: 1, body: "Earlier offer", created_at }], drafts: [], deliveries: [], history_cursor: null,
+  } }));
+  await page.goto("/");
+  await expect(page.getByText("Reply awaiting review")).toBeVisible();
+  await expect(page.getByText("You have read-only access to this workspace.")).toBeVisible();
+  await expect(page.getByRole("button", { name: /^(New|Edit policy|Edit creator policy|Recovery controls|Edit draft|Approve & send|Reject)$/ })).toHaveCount(0);
+  await page.getByRole("button", { name: "Load earlier history" }).click();
+  await expect(page.getByText("Earlier offer", { exact: true })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Revision 1" })).toBeFocused();
 });

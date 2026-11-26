@@ -83,12 +83,18 @@ export default function AgentInspector({ snapshot }: { snapshot: Snapshot }) {
         </div>}</>}
       {retrieval && (retrieval.sources.length > 0 || retrieval.denied_links > 0) && <div className="retrieval-panel">
         <div className="section-title"><FileText size={14} /> Linked brief evidence <small>{retrieval.latency_ms} ms</small></div>
-        {retrieval.sources.map((source) => <div className="retrieval-source" key={source.document_id}>
-          <a className="email-link" href={`/api/briefs/${source.document_id}`} target="_blank" rel="noopener noreferrer">{source.title}</a>
-          <small>Revision {source.revision}</small>
-          <small>{source.section_ids.length} of {source.candidate_sections} commercial sections</small>
-          <small>{source.section_ids.map(humanize).join(" · ")}</small>
-        </div>)}
+        {retrieval.sources.map((source) => {
+          const documentId = encodeURIComponent(source.document_id);
+          const href = source.kind === "registered"
+            ? `/api/negotiations/${encodeURIComponent(snapshot.id)}/briefs/${documentId}?revision=${encodeURIComponent(source.revision)}`
+            : `/api/briefs/${documentId}`;
+          return <div className="retrieval-source" key={`${source.document_id}:${source.revision}`}>
+            <a className="email-link" href={href} target="_blank" rel="noopener noreferrer">{source.title}</a>
+            <small>Revision {source.revision}</small>
+            <small>{source.section_ids.length} of {source.candidate_sections} commercial sections</small>
+            <small>{source.section_ids.map(humanize).join(" · ")}</small>
+          </div>;
+        })}
         {retrieval.denied_links > 0 && <p className="retrieval-warning">{retrieval.denied_links} {retrieval.denied_links === 1 ? "link was" : "links were"} skipped by the retrieval guardrails.</p>}
       </div>}
       {evidence && <details className="evidence">
@@ -97,6 +103,7 @@ export default function AgentInspector({ snapshot }: { snapshot: Snapshot }) {
           <div><dt>Analysis</dt><dd>{typeof duration === "number" ? duration + " ms" : "Unavailable"}</dd></div>
           <div><dt>Tokens</dt><dd>{usage ? usage.input_tokens + usage.output_tokens : "Unavailable"}</dd></div>
           <div><dt>Est. cost</dt><dd>{typeof cost === "number" ? "$" + cost.toFixed(6) : "Unavailable"}</dd></div></dl>
+        {evidence.langfuse_trace_id && <p><strong>Langfuse trace</strong> <code>{evidence.langfuse_trace_id}</code></p>}
         <p><strong>Tools</strong> {evidence.tools?.map(humanize).join(" · ") || "Unavailable"}</p>
         <p><strong>Context</strong> {evidence.context_ids?.join(", ") || "Current creator policy"}</p>
         {extraction && <pre>{JSON.stringify(extraction.details.terms, null, 2)}</pre>}

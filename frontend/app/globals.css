@@ -100,6 +100,7 @@ dd { margin: 0; font-weight: 650; text-align: right; }
 .composer textarea { margin: 8px 0 7px; background: #131622; }
 .composer-footer span { display: flex; gap: 5px; align-items: center; color: var(--muted); font-size: 11px; }
 .turn { display: grid; gap: 11px; margin-bottom: 12px; }
+.history-more { margin-bottom: 12px; }
 .message, .draft-card { background: #1d2131; border: 1px solid #31374b; border-radius: 9px; padding: 13px; }
 .draft-card { background: #211e34; border-color: #51436e; }
 .message header, .draft-card header { display: flex; align-items: center; gap: 8px; }

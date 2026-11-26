@@ -1,7 +1,7 @@
 import hashlib
 import os
 import secrets
-from contextlib import nullcontext
+from contextlib import contextmanager, nullcontext
 from pathlib import Path
 from uuid import uuid4
 
@@ -9,9 +9,10 @@ import psycopg
 from langgraph.checkpoint.postgres import PostgresSaver
 from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
+from psycopg_pool import ConnectionPool
 
 from .domain import Decision, Offer, Policy, Proposal
-from .identity import active_approver, is_creator_workspace
+from .identity import is_creator_workspace
 from .negotiation import render_reply
 from .operations import execution_identity
 from .outbox import Outbox
@@ -30,6 +31,10 @@ class NotFound(Exception):
 
 
 class Limit(Exception):
+    pass
+
+
+class ModelBudgetExhausted(Limit):
     pass
 
 
@@ -67,13 +72,31 @@ def invalidate(db, tenant, thread):
     )
 
 
+@contextmanager
+def pooled_store(url: str, *, max_size: int):
+    with ConnectionPool(
+        url,
+        kwargs={"row_factory": dict_row, "connect_timeout": 3},
+        min_size=1,
+        max_size=max_size,
+        timeout=5,
+        max_waiting=64,
+        open=False,
+    ) as pool:
+        yield Store(url, pool=pool)
+
+
 class Store:
-    def __init__(self, url: str):
+    def __init__(self, url: str, *, pool=None):
         self.url = url
+        self.pool = pool
         self.reads = NegotiationReads(self)
         self.outbox = Outbox(self)
 
     def connect(self, **kwargs):
+        # Session-affine advisory locks and explicitly short readiness deadlines use dedicated connections.
+        if self.pool is not None and not kwargs:
+            return self.pool.connection()
         return psycopg.connect(self.url, row_factory=dict_row, **kwargs)
 
     def migrate(self):
@@ -107,7 +130,7 @@ class Store:
                 (limit,),
             ).fetchone()
             if not reserved:
-                raise Limit("The daily live model call budget has been reached.")
+                raise ModelBudgetExhausted("The daily live model call budget has been reached.")
 
     def create_session(self, token: str | None = None, policy: Policy | None = None):
         tenant, thread = uuid4(), uuid4()
@@ -155,7 +178,7 @@ class Store:
                     if existing["label"] != label:
                         raise Conflict("This creation ID is already bound to a different negotiation.")
                     return existing["id"]
-            if (
+            if not is_creator_workspace(db, tenant) and (
                 db.execute(
                     "SELECT count(*) AS n FROM negotiations WHERE tenant_id=%s", (tenant,)
                 ).fetchone()["n"]
@@ -247,7 +270,7 @@ class Store:
                 return {"revision": existing["revision"], "job_id": existing["job_id"]}
             if current["status"] == "CLOSED":
                 raise Conflict("Reopen the negotiation before adding a reply.")
-            if (
+            if quota is not None and (
                 connection.execute(
                     "SELECT count(*) AS n FROM messages WHERE tenant_id=%s", (tenant,)
                 ).fetchone()["n"]
@@ -493,93 +516,19 @@ class Store:
         account_id=None,
         presented_digest=None,
     ):
-        from .mail_delivery import draft_envelope, record_mail_approval, verify_mail_approval_retry
+        from .draft_review import review_draft
 
-        with self.connect() as db:
-            policy_version = self.tenant_lock(db, tenant)
-            current = self.thread(db, tenant, thread, lock=True)
-            draft = db.execute(
-                "SELECT * FROM drafts WHERE tenant_id=%s AND thread_id=%s AND id=%s",
-                (tenant, thread, draft_id),
-            ).fetchone()
-            if not draft:
-                raise NotFound("Draft not found.")
-            revision = current["revision"]
-            real = is_creator_workspace(db, tenant)
-            if real and (not account_id or not active_approver(db, tenant, account_id)):
-                raise Conflict("An active creator approver is required.")
-            if draft["version"] != version:
-                raise Conflict("This draft is outdated.")
-            if action == "approve":
-                approval = db.execute(
-                    "SELECT id FROM approvals WHERE tenant_id=%s AND draft_id=%s", (tenant, draft_id)
-                ).fetchone()
-                if approval:
-                    if real:
-                        verify_mail_approval_retry(
-                            db, tenant, approval["id"], account_id, presented_digest
-                        )
-                    return approval["id"]
-            if (draft["revision"], draft["policy_version"]) != (revision, policy_version):
-                raise Conflict("This draft is outdated.")
-            if draft["status"] not in {"PENDING", "APPROVED"}:
-                raise Conflict("This draft is no longer available for review.")
-            if action == "edit":
-                invalidate(db, tenant, thread)
-                identifier = self.insert_draft(
-                    db,
-                    tenant,
-                    thread,
-                    draft["analysis_id"],
-                    version + 1,
-                    revision,
-                    policy_version,
-                    Decision.model_validate(draft["decision"]),
-                    proposal,
-                )
-                self.set_state(db, tenant, thread, "AWAITING_APPROVAL", revision)
-                return identifier
-            if action == "reject":
-                db.execute(
-                    "UPDATE drafts SET status='REJECTED' WHERE tenant_id=%s AND id=%s",
-                    (tenant, draft_id),
-                )
-                event(
-                    db,
-                    tenant,
-                    thread,
-                    revision,
-                    "draft_rejected",
-                    draft_id=str(draft_id),
-                    version=version,
-                )
-                self.set_state(db, tenant, thread, "REJECTED", revision)
-                return draft_id
-            approval_id = uuid4()
-            db.execute(
-                """INSERT INTO approvals(tenant_id,id,draft_id,version,revision,policy_version,digest)
-                          VALUES (%s,%s,%s,%s,%s,%s,%s)""",
-                (tenant, approval_id, draft_id, version, revision, policy_version, draft["digest"]),
-            )
-            if real:
-                envelope = draft_envelope(db, tenant, thread, draft["analysis_id"], draft["body"])
-                record_mail_approval(db, tenant, approval_id, account_id, envelope, presented_digest)
-            db.execute(
-                "UPDATE drafts SET status='APPROVED' WHERE tenant_id=%s AND id=%s", (tenant, draft_id)
-            )
-            enqueue(db, approval_id, tenant, thread, revision, "deliver", approval_id=str(approval_id))
-            event(
-                db,
-                tenant,
-                thread,
-                revision,
-                "draft_approved",
-                draft_id=str(draft_id),
-                version=version,
-                approval_id=str(approval_id),
-            )
-            self.set_state(db, tenant, thread, "APPROVED", revision)
-            return approval_id
+        return review_draft(
+            self,
+            tenant,
+            thread,
+            draft_id,
+            version,
+            action,
+            proposal,
+            account_id=account_id,
+            presented_digest=presented_digest,
+        )
 
     def deliver(self, tenant, thread, approval_id):
         with self.connect() as db:
