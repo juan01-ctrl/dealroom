@@ -99,3 +99,4 @@ Follow the [operations runbook](docs/operations.md) for the Railway API, separat
 The default workspace uses simulated mail. The [real-mail integration guide](docs/real-mail-integration.md) specifies the opt-in identity gateway and mail relay, including workspace membership, authenticated inbound events, sender and recipient binding, and receipt reconciliation. Verify the chosen gateway, provider account, workspace access, and data retention policy in staging before onboarding creators.
 
 See [architecture and trade-offs](docs/architecture.md) and the [production audit and remediation status](docs/production-readiness-audit.md).
+# dealroom
