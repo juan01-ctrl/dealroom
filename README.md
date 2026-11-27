@@ -2,11 +2,13 @@
 
 Dealroom is a standalone AI negotiation sandbox for creator brand deals. It extracts terms from simulated brand emails, applies versioned creator policies, drafts a response, and delivers it to a simulated inbox after the creator approves the exact draft version.
 
-Open [the local workspace](http://localhost:3000) after starting the services. Load the example offer to see a full inbound email and the linked Northstar campaign brief. The agent combines the USD 1,200 offer with the exclusivity and paid-usage terms in the brief, then proposes USD 2,600 before paid usage. The inspector shows which document revision and sections supported the draft.
+Watch the sample negotiation or see how Next.js, FastAPI, PostgreSQL, and the LangGraph workers fit together. [Demo walkthrough](docs/dealroom-walkthrough.mp4) · [Mermaid architecture diagram](docs/architecture.md)
 
 ## Run locally
 
-Prerequisites are Docker Compose, Node.js 22, Python 3.12, and uv. Compose publishes PostgreSQL on local port 55432. Set `DEALROOM_DB_PORT` before starting Compose to use a different port, and use the same port in `DATABASE_URL`.
+You need Docker Compose, Node.js 22, Python 3.12, and uv. The quickstart uses the scripted model and needs no API key. Start each terminal block from the repository root.
+
+### Terminal 1 — Database and API
 
 ```sh
 docker compose up -d --wait db
@@ -17,20 +19,25 @@ uv run --locked python -m app.migrate
 uv run --locked uvicorn app.api:app --host 127.0.0.1 --port 8000
 ```
 
-In a second terminal, run the worker from `backend/` with the same `DATABASE_URL`.
+### Terminal 2 — Worker
 
 ```sh
+cd backend
+export DATABASE_URL=postgresql://sandbox:sandbox-local@127.0.0.1:55432/negotiation
 uv run --locked python -m app.worker
 ```
 
-In a third terminal, start the web app from `frontend/`.
+### Terminal 3 — Web app
 
 ```sh
+cd frontend
 npm ci
 npm run dev
 ```
 
-The default scripted model handles the synthetic reference cases and makes repeatable runs possible without credentials. Set `MODEL_MODE=live` in the API and worker to try a provider. Set the same `MODEL_PROVIDER` and `MODEL_NAME` for the API and worker, and supply the provider key to the worker. Keep provider keys server-side. The worker caps each model call at 1,000 output tokens and uses bounded job retries. A regular live turn performs one provider extraction call. Proposal presentation runs locally. A live evaluation consumes model calls across the suite and requires `ALLOW_LIVE_EVALUATIONS=1` on the API. For estimates, record rates with `PRICE_AS_OF`, `PRICE_INPUT_USD_PER_MILLION`, and `PRICE_OUTPUT_USD_PER_MILLION` on the worker. Set `ENABLE_LANGSMITH=1` and the LangSmith project credentials to export sanitized turn summaries.
+Open the workspace, select **Load example offer**, then **Add to thread**. The agent reads the linked Northstar brief and counters the USD 1,200 Reel offer with USD 2,600 before paid usage. The inspector shows which brief revision and sections informed the draft. Approve the draft to see one receipt in the simulated inbox. [Open the local workspace](http://localhost:3000)
+
+If port `55432` is in use, set `DEALROOM_DB_PORT` before starting Compose and use that same port in both `DATABASE_URL` exports.
 
 ## Configure a live model locally
 
@@ -60,7 +67,9 @@ uv run --locked --env-file .env.live uvicorn app.api:app --host 127.0.0.1 --port
 uv run --locked --env-file .env.live python -m app.worker
 ```
 
-With the frontend running, reload `http://127.0.0.1:3000`. The header displays **Live model · simulated delivery**. For a local shared model-call cap, add `LIVE_DAILY_MODEL_CALLS` to the environment file. It counts requests reserved before each model call, across workers, and resets at midnight UTC.
+With the frontend running, reload the workspace. The header displays **Live model · simulated delivery**. The API and worker use the same `MODEL_PROVIDER` and `MODEL_NAME`, and the worker uses the provider key. Keep provider keys server-side. [Open the local workspace](http://localhost:3000)
+
+A regular live turn makes one extraction call. Dealroom applies policy and renders the draft locally. The worker caps each model call at 1,000 output tokens and uses bounded job retries. Set `LIVE_DAILY_MODEL_CALLS` for a shared call cap across workers that resets at midnight UTC. Live evaluations call the model across the suite and require `ALLOW_LIVE_EVALUATIONS=1` on the API. Set `PRICE_AS_OF`, `PRICE_INPUT_USD_PER_MILLION`, and `PRICE_OUTPUT_USD_PER_MILLION` on the worker to display cost estimates. `ENABLE_LANGSMITH=1` and LangSmith project credentials enable optional sanitized turn summaries.
 
 ## Verify
 
@@ -72,9 +81,10 @@ TEST_DATABASE_URL=postgresql://sandbox:sandbox-local@127.0.0.1:55432/negotiation
 uv run --locked ruff check app tests
 ```
 
-With all three services running, run the browser suite from `frontend/`.
+Keep the local web app, API, and worker running in the quickstart configuration. The browser suite expects `MODEL_MODE=scripted` on the API and worker because it checks exact draft text and runs the scripted evaluation suite. From the repository root, run the following commands.
 
 ```sh
+cd frontend
 npm run build
 npx playwright install chromium
 npm test
@@ -86,17 +96,20 @@ To regenerate the evaluation artifact from `backend/`, migrate the chosen databa
 uv run --locked python -m app.evaluations --output ../docs/evaluation-results.json
 ```
 
-The dashboard shows observed outcomes and fixture version. Suite v4 contains 33 cases and reports linked-evidence recall and precision, sender evidence, negotiation moves, and average reply length. Scripted scores measure workflow behavior. Latency varies by machine, and live model quality and estimated cost vary by provider. See [the recorded run](docs/evaluation-results.json), [the held-out live review guide](docs/live-negotiation-review.md), and [the walkthrough](docs/dealroom-walkthrough.mp4).
+The dashboard shows observed outcomes and fixture version. Suite v4 contains 33 cases and reports linked-evidence recall and precision, sender evidence, negotiation moves, and average reply length. Scripted scores measure workflow behavior. Latency varies by machine, and live model quality and estimated cost vary by provider. [Recorded evaluation run](docs/evaluation-results.json) · [Held-out live review guide](docs/live-negotiation-review.md)
 
 ## Langfuse observability
 
 Set `ENABLE_LANGFUSE=1` and the Langfuse project keys on the worker to export job, model, and evaluation observations. The inspector shows the trace ID under **Turn evidence**. CI runs the synthetic evals and tracing tests without external credentials. Follow the [Langfuse configuration and verification guide](docs/langfuse.md).
 
-## Deploy
+## Deploy to staging
 
-Follow the [operations runbook](docs/operations.md) for the Railway API, separate analysis, delivery, and evaluation workers, and Vercel frontend. The runbook covers credentials, migration, health checks, backups, rollout and rollback. Run the isolated local release drill with `bash scripts/release-smoke.sh`. See the [production mail implementation plan](docs/superpowers/plans/2026-11-25-production-mail-readiness.md) for capacity assumptions and launch gates.
+1. In Railway staging, connect the API and the analysis and delivery workers to the staging PostgreSQL database. Use `/backend` as the service root, set `REAL_MAIL_ENABLED=0`, and give the API an HTTPS domain. Confirm that `/ready` returns HTTP 200.
+2. In Vercel, set the project root to `frontend` and configure a protected Preview. Set `BACKEND_URL` to the Railway staging API’s HTTPS origin and set `API_PROXY_SECRET` as a sensitive Preview variable using the same value as the Railway API. Deploy a new Preview after saving the variables.
+3. Open the protected Preview and submit a synthetic offer. In live mode, confirm **Live model · simulated delivery**, review and approve the draft, then reload. The thread should still show exactly one receipt in the simulated inbox.
+
+The core smoke test uses the analysis and delivery workers. The full deployment adds a separate evaluation worker. Run the isolated local release drill with `bash scripts/release-smoke.sh`. [Operations runbook](docs/operations.md) · [Capacity assumptions and launch gates](docs/superpowers/plans/2026-11-25-production-mail-readiness.md)
 
 The default workspace uses simulated mail. The [real-mail integration guide](docs/real-mail-integration.md) specifies the opt-in identity gateway and mail relay, including workspace membership, authenticated inbound events, sender and recipient binding, and receipt reconciliation. Verify the chosen gateway, provider account, workspace access, and data retention policy in staging before onboarding creators.
 
-See [architecture and trade-offs](docs/architecture.md) and the [production audit and remediation status](docs/production-readiness-audit.md).
-# dealroom
+[Production audit and remediation status](docs/production-readiness-audit.md)
